@@ -1,0 +1,804 @@
+<title>Bloc CCTA 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: plein écran 3D, barre haute fine, panneau bas coulissant (fiche / calques / liste). Thème atelier sombre assumé. */
+:root{
+  --bg:#14171b; --panel:#1c2026; --panel-2:#242a31; --line:#323a43;
+  --fg:#e7eaed; --muted:#8d97a1; --accent:#f0a43a; --accent-ink:#1a1206;
+  --renew:#e8563f; --ok:#5fb98a; --todo:#c9a227;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%;}
+[hidden]{display:none!important;}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;}
+#app{position:fixed;inset:0;}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
+button{font:inherit;color:inherit;}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+.top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;
+  padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:10px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:linear-gradient(var(--bg) 40%,transparent);pointer-events:none;z-index:5;}
+.brand{display:flex;flex-direction:column;min-width:0;pointer-events:auto;}
+.brand b{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.02em;line-height:1.05;}
+.brand span{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.top .sp{flex:1;}
+.ib{pointer-events:auto;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;cursor:pointer;flex:none;}
+.ib svg{width:20px;height:20px;stroke:var(--fg);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.ib[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);}
+.ib[aria-pressed="true"] svg{stroke:var(--accent-ink);}
+
+.tools{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(70px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:8px;z-index:4;}
+.explode{position:absolute;left:max(16px,env(safe-area-inset-left,0px));top:calc(70px + env(safe-area-inset-top,0px));z-index:4;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;}
+.explode label{font-family:var(--f-display);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.explode input{width:min(36vw,170px);accent-color:var(--accent);}
+
+.hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--sheet-h,64px) + 14px);z-index:3;
+  background:rgba(28,32,38,.92);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12.5px;color:var(--muted);white-space:nowrap;transition:opacity .3s;}
+
+.seqbar{position:absolute;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
+  top:calc(118px + env(safe-area-inset-top,0px));z-index:6;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.seqbar .row{display:flex;align-items:center;gap:10px;}
+.seqbar b{font-family:var(--f-display);font-size:16px;flex:1;min-width:0;}
+.seqbar .stage{font-family:var(--f-mono);font-size:13px;color:var(--accent);}
+.seqbar .steps{display:flex;flex-wrap:wrap;gap:6px;}
+.seqbar .steps span{font-family:var(--f-mono);font-size:11.5px;padding:3px 7px;border-radius:6px;background:var(--panel-2);color:var(--muted);}
+.seqbar .steps span.on{background:var(--accent);color:var(--accent-ink);}
+.btn{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer;white-space:nowrap;}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+
+/* Panneau bas */
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:7;background:var(--panel);border-top:1px solid var(--line);border-radius:16px 16px 0 0;
+  max-height:min(62vh,560px);display:flex;flex-direction:column;transition:transform .28s ease;padding-bottom:env(safe-area-inset-bottom,0px);
+  box-shadow:0 -10px 30px rgba(0,0,0,.35);}
+.sheet.collapsed .body{display:none;}
+.handle{display:flex;justify-content:center;padding:8px 0 2px;cursor:pointer;}
+.handle i{width:38px;height:4px;border-radius:2px;background:var(--line);}
+.tabs{display:flex;gap:6px;padding-block:4px 10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
+.tab{flex:1;border:1px solid var(--line);background:transparent;border-radius:9px;padding:8px 6px;font-family:var(--f-display);font-weight:600;font-size:14.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);cursor:pointer;}
+.tab[aria-selected="true"]{background:var(--panel-2);color:var(--fg);border-color:var(--muted);}
+.body{overflow-y:auto;overscroll-behavior:contain;padding-block:0 18px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
+
+.empty{color:var(--muted);font-size:14px;line-height:1.5;padding:4px 0 8px;}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12.5px;color:var(--muted);}
+.legend span{display:flex;align-items:center;gap:6px;}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+.card h2{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1.1;margin:2px 0 2px;text-wrap:balance;}
+.card .en{color:var(--muted);font-size:12.5px;margin-bottom:10px;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.chip{font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);}
+.chip.renew{border-color:var(--renew);color:var(--renew);}
+.chip.ok{border-color:var(--ok);color:var(--ok);}
+.chip.todo{border-color:var(--todo);color:var(--todo);}
+.chip.acc{border-color:var(--accent);color:var(--accent);}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin:0 0 12px;font-size:14px;}
+dl.kv dt{color:var(--muted);}
+dl.kv dd{margin:0;min-width:0;}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;}
+.torque{font-family:var(--f-mono);font-weight:700;font-size:24px;color:var(--accent);line-height:1.1;}
+.stages{list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:5px;counter-reset:st;}
+.stages li{display:flex;gap:10px;align-items:baseline;font-size:14px;}
+.stages li::before{counter-increment:st;content:counter(st);font-family:var(--f-mono);font-size:12px;width:20px;height:20px;flex:none;border-radius:5px;background:var(--panel-2);display:grid;place-items:center;color:var(--accent);}
+.note{font-size:13.5px;color:var(--muted);line-height:1.5;margin:0 0 10px;}
+.sec{font-family:var(--f-display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px;}
+.bg-list{display:flex;flex-direction:column;gap:8px;}
+.bg{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:var(--panel-2);cursor:pointer;text-align:left;}
+.bg .t{font-weight:600;font-size:14px;min-width:0;}
+.bg .s{font-size:12.5px;color:var(--muted);grid-column:1;min-width:0;}
+.bg .v{font-family:var(--f-mono);font-size:13px;color:var(--accent);grid-row:1 / span 2;grid-column:2;text-align:right;}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 6px;}
+a.src{color:var(--accent);font-size:13px;word-break:break-word;}
+
+.layers{display:flex;flex-direction:column;gap:2px;}
+.lay{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line);cursor:pointer;}
+.lay:last-child{border-bottom:0;}
+.lay .sw{width:14px;height:14px;border-radius:4px;flex:none;}
+.lay .n{flex:1;font-size:15px;}
+.lay .c{font-size:12px;color:var(--muted);font-family:var(--f-mono);}
+.tg{width:42px;height:24px;border-radius:12px;background:var(--line);position:relative;flex:none;transition:background .2s;}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--fg);transition:transform .2s;}
+.lay[aria-checked="true"] .tg{background:var(--accent);}
+.lay[aria-checked="true"] .tg::after{transform:translateX(18px);background:var(--accent-ink);}
+
+.search{width:100%;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--fg);font:inherit;font-size:15px;margin-bottom:10px;}
+.list{display:flex;flex-direction:column;}
+.li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;}
+.li .sw{width:10px;height:10px;border-radius:3px;}
+.li .t{font-size:14.5px;min-width:0;}
+.li .t small{display:block;color:var(--muted);font-size:12px;}
+.li .v{font-family:var(--f-mono);font-size:12.5px;color:var(--accent);}
+.disclaimer{font-size:12px;color:var(--muted);line-height:1.5;margin-top:14px;border-top:1px solid var(--line);padding-top:10px;}
+@media (prefers-reduced-motion:reduce){.sheet,.hint,.tg,.tg::after{transition:none;}}
+</style>
+
+<div id="app">
+  <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
+
+  <header class="top">
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · bloc et visserie</span></div>
+    <div class="sp"></div>
+    <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+  </header>
+
+  <div class="explode"><label for="ex">Éclaté</label><input id="ex" type="range" min="0" max="100" value="0"></div>
+
+  <div class="tools">
+    <button class="ib" id="btnXray" aria-pressed="false" title="Transparence du bloc" aria-label="Transparence du bloc"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 14l6-6M9 20l11-11M15 20l5-5"/></svg></button>
+    <button class="ib" id="btnGhost" aria-pressed="true" title="Accessoires en silhouette" aria-label="Accessoires en silhouette"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="2"/></svg></button>
+    <button class="ib" id="btnBolts" aria-pressed="true" title="Afficher la visserie" aria-label="Afficher la visserie"><svg viewBox="0 0 24 24"><path d="M8 3h8l3 5-3 5H8L5 8z"/><path d="M12 13v8"/></svg></button>
+  </div>
+
+  <div class="hint" id="hint">Touchez une pièce ou une vis</div>
+
+  <div class="seqbar" id="seqbar" hidden>
+    <div class="row"><b id="seqTitle">Ordre de serrage</b><span class="stage mono" id="seqNow"></span></div>
+    <div class="steps" id="seqSteps"></div>
+    <div class="row"><button class="btn" id="seqReplay">Rejouer</button><button class="btn" id="seqLoosen" hidden>Ordre de desserrage</button><span style="flex:1"></span><button class="btn pri" id="seqClose">Terminer</button></div>
+  </div>
+
+  <section class="sheet" id="sheet">
+    <div class="handle" id="handle" aria-label="Agrandir ou réduire le panneau"><i></i></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tFiche" aria-selected="true">Fiche</button>
+      <button class="tab" role="tab" id="tCalques" aria-selected="false">Calques</button>
+      <button class="tab" role="tab" id="tListe" aria-selected="false">Liste</button>
+    </div>
+    <div class="body" id="body"></div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   Repère (mm) : X le long du vilebrequin (−X = côté distribution / droite véhicule, +X = côté boîte DSG),
+   Y vers le haut (axe vilebrequin à Y=0), +Z vers l'avant (admission, radiateur), −Z vers le tablier (turbo).
+   Géométrie schématique ; couples, angles, remplacement et ordres de serrage : manuel atelier VW
+   « 4-cyl. injection engine (1.8 and 2.0 l engine, chain drive) », édition 08.2018.
+   ============================================================ */
+const MAN = "https://workshop-manuals.com/volkswagen/golf-mk6/power_unit/4-cylinder_injection_engine_(1.8_and_2.0_l_engine_chain_drive)/";
+const SRC = {
+  head: MAN+"engine_cylinder_head_valve_gear/cylinder_head/assembly_overview_cylinder_head/",
+  valve: MAN+"engine_cylinder_head_valve_gear/valve_gear/assembly_overview_valve_gear/",
+  covers: MAN+"engine_cylinder_head_valve_gear/chain_drive/assembly_overview_timing_chain_covers/",
+  chain: MAN+"engine_cylinder_head_valve_gear/chain_drive/camshaft_timing_chain_exploded_view/",
+  bal: MAN+"engine_cylinder_head_valve_gear/chain_drive/assembly_overview_balancer_shaft_timing_chain/",
+  sump: MAN+"engine_lubrication/sump_and_oil_pump/assembly_overview_sump_oil_pump/",
+  crank: MAN+"enginecrankshaft_group_pistons/crankshaft/assembly_overview_crankshaft/",
+  belt: MAN+"enginecrankshaft_group_pistons/cylinder_block_(pulley_end)/assembly_overview_poly_v-belt_drive/",
+  flange: MAN+"enginecrankshaft_group_pistons/cylinder_block_on_gearbox_side/assembly_overview_sealing_flange_on_gearbox_side_and_dual-mass_flywheel/drive_plate/",
+  oil: MAN+"engine_lubrication/oil_filter_engine_oil_cooler_and_oil_pressure_switch_(engine_codes_cawa_cawb_cbfa_ccta_cctb_bzb_cgya)/assembly_overview_oil_filter_engine_oil_cooler_and_oil_pressure_switchf1/",
+  pump: MAN+"engine_cooling/coolant_pump_thermostat_coolant_pipes/coolant_pump_and_thermostat_exploded_view/",
+  turbo3: MAN+"exhaust_turbocharger_g-charger/turbocharger/assembly_overview_turbocharger/part_iii/",
+  turboR: MAN+"exhaust_turbocharger_g-charger/turbocharger/removing_and_installing_turbocharger/",
+  turbo2: MAN+"exhaust_turbocharger_g-charger/turbocharger/assembly_overview_turbocharger/part_ii/",
+  intake: MAN+"mixture_preparation_system_electronic_inj.gas/injection_system/assembly_overview_intake_manifold/",
+  rail: MAN+"mixture_preparation_system_electronic_inj.gas/injection_system/fuel_rail_exploded_view/",
+  ign: MAN+"ignition_system_glow_plug_system/repairing_ignition_system/assembly_overview_ignition_system/",
+  mount: MAN+"engine_assycylinder_blockcrankcase/assembly_mountings/assembly_overview_assembly_mountings_(golf_eos_passat_cc_scirocco)/",
+  gearbox: "https://workshop-manuals.com/volkswagen/golf-mk6/power_transmission/6-speed_dual_clutch_gearbox_02e/gearbox_mechanicsoperation_constructiondiff./torque_settings_gearbox_to_engine/torque_settings_(elsa)/"
+};
+
+/* ---------- Calques ---------- */
+const LAYERS = [
+  {id:"struct", name:"Bloc et carters", color:"#a9b2ba"},
+  {id:"head",   name:"Culasse et distribution", color:"#7fa7c9"},
+  {id:"lube",   name:"Lubrification", color:"#d6a24a"},
+  {id:"cool",   name:"Refroidissement", color:"#58a6a0"},
+  {id:"sens",   name:"Capteurs", color:"#b48ad6"},
+  {id:"side",   name:"Côté boîte et poulie", color:"#8f9aa5"},
+  {id:"mount",  name:"Supports moteur", color:"#9c8f7c"},
+  {id:"acc",    name:"Accessoires (silhouettes)", color:"#6fa8dc"}
+];
+
+/* ---------- Pièces ----------
+   g : primitives [type, ...] ; b = boîte arrondie [x0,x1,y0,y1,z0,z1,r] ; c = cylindre [axe, cx,cy,cz, r, longueur]
+   ex : décalage en vue éclatée (mm) */
+const PARTS = [
+ {id:"block", layer:"struct", name:"Bloc-cylindres (carter-cylindres)", en:"Cylinder block", col:"#9aa3ab", src:SRC.crank,
+  info:"Alésage 82,5 mm, course 92,8 mm, 1984 cm³. Arbres d'équilibrage logés dans le bloc (Gen 1). Ordre d'allumage 1-3-4-2, cylindre 1 côté distribution.",
+  g:[["b",-228,228,-55,222,-104,104,6],["b",-228,228,-55,40,-117,117,6],
+     ["c","y",-132,140,74,47,150],["c","y",-44,140,74,47,150],["c","y",44,140,74,47,150],["c","y",132,140,74,47,150],
+     ["c","y",-132,140,-74,47,150],["c","y",-44,140,-74,47,150],["c","y",44,140,-74,47,150],["c","y",132,140,-74,47,150]], ex:[0,0,0]},
+ {id:"head", layer:"head", name:"Culasse", en:"Cylinder head", col:"#a8b2bb", src:SRC.head,
+  info:"Culasse alu 16 soupapes, injection directe. Planéité max. 0,05 mm (règle VAS 6075).",
+  g:[["b",-228,228,222,330,-112,112,8],["b",-180,180,250,305,-124,-112,4],["b",-180,180,255,300,112,122,4]], ex:[0,170,0]},
+ {id:"gasket", layer:"head", name:"Joint de culasse", en:"Cylinder head gasket", col:"#5b6168", src:SRC.head,
+  info:"À remplacer à chaque dépose. Repère « numéro de pièce » côté culasse. Remplacer tout le liquide de refroidissement si joint ou culasse neufs.",
+  g:[["b",-226,226,221,224,-108,108,1]], ex:[0,85,0], renew:true},
+ {id:"camh", layer:"head", name:"Carter d'arbres à cames", en:"Cylinder head cover (camshaft housing)", col:"#8f99a2", src:SRC.valve,
+  info:"Paliers d'arbres à cames intégrés. Surface d'étanchéité : nettoyer, aucune reprise permise. Pâte à joint.",
+  g:[["b",-226,226,330,382,-98,98,8],["c","x",-224,365,-38,22,10],["c","x",-224,365,38,22,10]], ex:[0,320,0]},
+ {id:"tcu", layer:"head", name:"Carter de distribution supérieur", en:"Timing chain cover (top)", col:"#6b737b", src:SRC.covers,
+  info:"Joint à remplacer s'il est endommagé.", g:[["b",-252,-228,232,386,-100,100,10]], ex:[-220,120,0]},
+ {id:"tcl", layer:"head", name:"Carter de distribution inférieur", en:"Lower timing chain cover", col:"#626a72", src:SRC.covers,
+  info:"Version 15 vis ou 8 vis selon modèle. Pâte silicone D 174 003 A2, cordon 2–3 mm, montage dans les 5 min, attendre 30 min avant de mettre l'huile. Contrôler l'écart avec le bloc : 0,2 mm max.",
+  g:[["b",-254,-228,-150,234,-112,112,14]], ex:[-230,0,0]},
+ {id:"sumpU", layer:"struct", name:"Carter d'huile supérieur (alu)", en:"Upper part of sump", col:"#8c959d", src:SRC.sump,
+  info:"Pâte silicone D 174 003 A2, cordon 2–3 mm, montage dans les 5 min. Côté boîte : affleurant avec le bloc.",
+  g:[["b",-228,228,-150,-55,-118,118,8]], ex:[0,-150,0]},
+ {id:"sumpL", layer:"struct", name:"Carter d'huile inférieur", en:"Lower part of sump", col:"#3d434a", src:SRC.sump,
+  info:"Pas de sonde G266 sur CCTA. Bouchon de vidange 30 Nm.", g:[["b",-205,205,-240,-150,-106,106,14]], ex:[0,-300,0]},
+ {id:"drain", layer:"lube", name:"Bouchon de vidange", en:"Oil drain plug", col:"#c8ccd0", src:SRC.sump, info:"Joint à remplacer.",
+  g:[["c","y",120,-246,40,11,10]], ex:[0,-330,0]},
+ {id:"sep", layer:"lube", name:"Séparateur d'huile grossier", en:"Coarse oil separator", col:"#4d555e", src:SRC.sump,
+  info:"Sur la face avant du bloc, en bas. Joint à remplacer.", g:[["b",-82,122,-42,92,104,122,8]], ex:[0,-40,160]},
+ {id:"pcv", layer:"lube", name:"Reniflard de carter (dégazage)", en:"Crankcase breather", col:"#3f464e", src:SRC.head,
+  info:"Raccords vers conduit d'admission/turbo et vers collecteur d'admission. Position schématique.", g:[["b",10,190,336,388,-128,-98,8],["c","z",120,362,-136,20,16]], ex:[0,200,-200]},
+ {id:"brk", layer:"lube", name:"Support d'accessoires (filtre à huile)", en:"Bracket for ancillaries", col:"#7c858e", src:SRC.belt,
+  info:"Porte l'alternateur, le compresseur de clim, le tendeur, le filtre à huile, le refroidisseur d'huile et le manocontact F1. Joints toriques du raccord : humidifier au liquide de refroidissement.",
+  g:[["b",-216,-108,28,252,104,142,8]], ex:[-60,0,170]},
+ {id:"ofil", layer:"lube", name:"Filtre à huile (cartouche + couvercle)", en:"Oil filter", col:"#2f3a44", src:SRC.oil,
+  info:"Couvercle 22 Nm (outil 3417). Joint torique à remplacer.", g:[["c","y",-180,312,150,36,96]], ex:[-60,150,210]},
+ {id:"ocool", layer:"lube", name:"Refroidisseur d'huile", en:"Engine oil cooler", col:"#6d7680", src:SRC.oil,
+  info:"Joints à remplacer. Garder un jeu avec les pièces voisines.", g:[["b",-212,-128,120,196,142,176,6]], ex:[-60,-20,250]},
+ {id:"f1", layer:"sens", name:"Manocontact de pression d'huile F1", en:"Oil pressure switch -F1-", col:"#222", src:SRC.oil,
+  info:"1,4 bar, noir. Clé articulée 24 mm T40175.", g:[["c","z",-125,215,150,10,24]], ex:[-60,0,230]},
+ {id:"dip", layer:"lube", name:"Tube de jauge à huile", en:"Dipstick guide tube", col:"#e0c040", src:SRC.covers,
+  info:"Joint torique à remplacer, graisser avant montage.", g:[["c","y",-205,190,122,7,380]], ex:[-60,90,140]},
+ {id:"wpump", layer:"cool", name:"Pompe à eau + boîtier thermostat", en:"Coolant pump / thermostat", col:"#4f8f8a", src:SRC.pump,
+  info:"Entraînée par courroie crantée depuis l'arbre d'équilibrage, côté boîte. Contrôler l'appui sur les 2 pions de centrage (miroir). Pompe neuve : retirer le capuchon.",
+  g:[["b",96,222,112,222,104,168,10],["c","z",126,150,200,32,60]], ex:[0,0,180]},
+ {id:"guard", layer:"cool", name:"Carter de courroie de pompe à eau", en:"Toothed belt guard", col:"#3c4248", src:SRC.pump,
+  info:"Courroie crantée de pompe à eau dessous. Pignon d'entraînement : collet côté boîte.", g:[["b",228,244,126,214,52,104,6]], ex:[150,0,60]},
+ {id:"vac", layer:"head", name:"Pompe à vide", en:"Vacuum pump", col:"#57606a", src:SRC.head,
+  info:"Ne pas démonter. Joint à remplacer s'il est endommagé. Position schématique.", g:[["c","x",246,282,-48,30,36]], ex:[200,170,0]},
+ {id:"hpfp", layer:"head", name:"Pompe haute pression carburant", en:"High-pressure pump (N276)", col:"#8a9097", src:SRC.intake,
+  info:"Poussoir à galet : peut rester dans la culasse. Dépressuriser le circuit avant dépose. Position schématique.", g:[["c","y",208,404,18,24,44]], ex:[0,430,60]},
+ {id:"g62", layer:"sens", name:"Sonde de température G62", en:"Coolant temperature sender -G62-", col:"#2a6", src:SRC.pump,
+  info:"Version enfichée (agrafe) ou vissée (plaquette 4 Nm).", g:[["c","y",196,226,150,8,20]], ex:[0,40,200]},
+ {id:"knock", layer:"sens", name:"Capteur de cliquetis G61", en:"Knock sensor 1 -G61-", col:"#c9a227", src:SRC.ign,
+  info:"Sous le collecteur d'admission, derrière la pompe à eau. Le couple influence le fonctionnement du capteur. Contacts dorés.",
+  g:[["c","z",-20,150,112,14,14]], ex:[0,0,110]},
+ {id:"g28", layer:"sens", name:"Capteur de régime G28", en:"Engine speed sender -G28-", col:"#b48ad6", src:SRC.ign,
+  info:"En bas à l'avant du bloc, à côté du séparateur d'huile.", g:[["c","z",150,30,116,12,16]], ex:[0,-20,120]},
+ {id:"g40", layer:"sens", name:"Capteur de Hall G40", en:"Hall sender -G40-", col:"#b48ad6", src:SRC.ign,
+  info:"Sur le carter d'arbres à cames, côté distribution. Contacts dorés.", g:[["c","z",-196,356,104,11,16]], ex:[-40,320,90]},
+ {id:"n205", layer:"head", name:"Électrovanne de déphaseur N205", en:"Inlet camshaft control valve 1 -N205-", col:"#222a30", src:SRC.covers,
+  info:"Sur le carter de distribution supérieur. Joint : graisser, remplacer s'il est endommagé.", g:[["c","x",-262,340,10,22,20]], ex:[-260,140,0]},
+ {id:"damper", layer:"side", name:"Amortisseur de vibrations (poulie)", en:"Vibration damper", col:"#50575e", src:SRC.belt,
+  info:"Mettre au PMH (encoche face au repère du carter inférieur). Joint torique à remplacer. Contre-appui T10355.", g:[["c","x",-276,0,0,82,40],["c","x",-266,0,0,40,24]], ex:[-360,0,0]},
+ {id:"flange", layer:"side", name:"Flasque d'étanchéité côté boîte", en:"Sealing flange on gearbox side", col:"#6a727a", src:SRC.flange,
+  info:"Remplacer complet (avec bague). Pâte silicone, cordon 2–3 mm, montage dans les 5 min. Douille de guidage T20097.", g:[["c","x",232,0,0,100,8]], ex:[170,0,0]},
+ {id:"iplate", layer:"side", name:"Tôle intermédiaire", en:"Intermediate plate", col:"#4a5057", src:SRC.flange,
+  info:"Doit reposer sur les douilles de centrage. Ne pas plier.", g:[["b",237,240,-150,170,-170,170,10]], ex:[230,0,0]},
+ {id:"dmf", layer:"side", name:"Volant bimasse", en:"Dual-mass flywheel", col:"#7a8189", src:SRC.flange,
+  info:"Une seule position (trous décalés). Ne pas dévisser à la clé à chocs. Contre-appui 3067.", g:[["c","x",262,0,0,128,40]], ex:[330,0,0]},
+ {id:"esup", layer:"mount", name:"Support moteur (côté distribution)", en:"Engine support", col:"#8a7f6e", src:SRC.mount,
+  info:"Relie le moteur au silentbloc moteur droit. Position schématique.", g:[["b",-300,-256,150,300,-70,70,8]], ex:[-400,60,0]},
+ // Accessoires en silhouette
+ {id:"alt", layer:"acc", ghost:true, name:"Alternateur", en:"Alternator", col:"#6fa8dc", src:SRC.belt, info:"Silhouette. Seules ses vis de fixation sont détaillées.",
+  g:[["c","x",-160,205,196,62,130]], ex:[-80,40,340]},
+ {id:"acomp", layer:"acc", ghost:true, name:"Compresseur de climatisation", en:"Air conditioner compressor", col:"#6fa8dc", src:SRC.belt, info:"Silhouette. Ne jamais ouvrir le circuit de réfrigérant.",
+  g:[["c","x",-160,70,198,58,140]], ex:[-80,-30,340]},
+ {id:"tens", layer:"acc", ghost:true, name:"Tendeur de courroie Poly-V", en:"Tensioning element", col:"#6fa8dc", src:SRC.belt, info:"Silhouette. Blocage avec la goupille T10060 A.",
+  g:[["c","x",-232,150,150,30,30]], ex:[-200,40,200]},
+ {id:"intake", layer:"acc", ghost:true, name:"Collecteur d'admission + rampe", en:"Intake manifold", col:"#6fa8dc", src:SRC.intake, info:"Silhouette. Joints à remplacer (ergot dans la rainure).",
+  g:[["b",-170,170,222,332,124,214,24],["c","y",-40,206,240,34,50]], ex:[0,60,240]},
+ {id:"turbo", layer:"acc", ghost:true, name:"Turbo K03 + collecteur d'échappement", en:"Turbocharger / exhaust manifold", col:"#6fa8dc", src:SRC.turbo3, info:"Silhouette. Turbo, collecteur et capsule forment une seule pièce de rechange.",
+  g:[["b",-175,175,240,312,-170,-112,14],["c","z",-30,150,-210,62,80],["c","x",40,150,-210,48,60]], ex:[0,40,-260]},
+ {id:"starter", layer:"acc", ghost:true, name:"Démarreur", en:"Starter", col:"#6fa8dc", src:SRC.gearbox, info:"Silhouette. Fixé à travers la boîte DSG.",
+  g:[["c","x",320,-40,150,42,150]], ex:[230,-40,200]},
+ {id:"dsg", layer:"acc", ghost:true, name:"Boîte DSG DQ250 (02E)", en:"6-speed dual clutch gearbox 02E", col:"#6fa8dc", src:SRC.gearbox, info:"Silhouette de la cloche d'embrayage. Avec Quattro, le renvoi d'angle est fixé sur la boîte.",
+  g:[["c","x",420,10,0,215,330]], ex:[500,0,0]}
+];
+
+/* ---------- Groupes de vis ----------
+   pts : [x,y,z, n] (n = numéro dans l'ordre de serrage, 0 = sans ordre) ; dir : sens de la tête de vis
+   st : étapes de serrage ; renew : vis à remplacer ; m : filetage ; todo : valeur absente du manuel moteur */
+const BOLTS = [];
+function B(o){BOLTS.push(o);return o;}
+
+// Culasse : 10 vis principales, ordre par paires (manuel : 1 … 5)
+(function(){
+  const order = {"-176":4,"-88":2,"0":1,"88":3,"176":5}, loos = {"-176":2,"-88":4,"0":5,"88":3,"176":1};
+  const pts=[]; [-176,-88,0,88,176].forEach(x=>{[62,-62].forEach(z=>pts.push([x,331,z,order[x],loos[x]]));});
+  B({id:"hb", part:"head", name:"Vis de culasse", en:"Cylinder head bolt", m:"M12", renew:true, dir:[0,1,0], pts, src:SRC.head,
+     torque:"40 Nm + 90° + 90°", st:["Serrer à 40 Nm (clé dynamométrique)","Tourner de 90° (clé rigide)","Tourner encore de 90° (clé rigide)"],
+     note:"Ordre par paires, du centre vers les extrémités. Aucun resserrage après réparation. Pas d'huile ni de liquide dans les trous borgnes du bloc.",
+     loosen:"Desserrage : d'abord les 4 vis M6 côté distribution, puis les vis de culasse dans l'ordre 1 … 5 (des extrémités vers le centre)."});
+})();
+B({id:"hb6", part:"head", name:"Vis de culasse côté distribution (M6)", en:"Bolts -arrows-", m:"M6", renew:true, dir:[-1,0,0],
+   pts:[[-230,250,-70,1],[-230,282,-70,2],[-230,312,-70,3],[-230,250,70,4]], src:SRC.head, seq:false,
+   torque:"8 Nm + 90°", st:["Après les vis de culasse : prés serrer à 8 Nm","Tourner de 90° (clé rigide)"], note:"Étapes 4 et 5 de la procédure de serrage de la culasse. Positions schématiques."});
+// Carter d'arbres à cames : 22 vis, ordre par colonnes 1 … 6
+(function(){
+  const cols=[[-176,4],[-88,2],[0,1],[88,3],[176,5]], pts=[];
+  cols.forEach(([x,n])=>[-80,-46,46,80].forEach(z=>pts.push([x,383,z,n])));
+  pts.push([-216,383,-84,6],[-216,383,84,6]);
+  B({id:"chb", part:"camh", name:"Vis du carter d'arbres à cames", en:"Cylinder head cover bolts", m:"M6", renew:true, dir:[0,1,0], pts, src:SRC.valve,
+     torque:"8 Nm + 90°", st:["Visser à la main par colonnes 1 … 6, en plusieurs passes","Serrer à 8 Nm dans l'ordre 1 … 6","Tourner de 90° dans l'ordre 1 … 6 (clé rigide)"],
+     note:"Garder le cadre de maintien bien droit. Un numéro = une colonne de vis."});
+})();
+B({id:"tbk", part:"head", name:"Vis des pattes de levage", en:"Transport bracket bolts", m:"M8", dir:[0,0,-1], seq:false,
+   pts:[[-205,300,-113,0],[-215,270,-113,0],[205,300,113,0],[215,270,113,0]], src:SRC.head, torque:"25 Nm", st:["25 Nm"], note:"Deux pattes de levage. Positions schématiques."});
+B({id:"hsh", part:"head", name:"Vis d'écran thermique (culasse)", en:"Heat shield bolts", m:"M8", dir:[0,0,-1], seq:false,
+   pts:[[-150,240,-114,0],[0,240,-114,0],[150,240,-114,0]], src:SRC.turboR, torque:"20 Nm", st:["20 Nm (M8 et M12)"], note:"Positions schématiques."});
+B({id:"vacb", part:"vac", name:"Vis de pompe à vide", en:"Securing bolts for vacuum pump", m:"M6", dir:[1,0,0], seq:false,
+   pts:[[283,-48+275,-48,0],[283,300,-20,0],[283,250,-20,0]].map(p=>[p[0],p[1],p[2],0]), src:SRC.head, torque:"9 Nm", st:["9 Nm (CCTA)"],
+   note:"CCZA/CDAA : 8 Nm + 180°. Sur CCTA : 9 Nm. Joint posé sur la pompe, 2 vis engagées, puis présenter sur la culasse."});
+B({id:"pcvb", part:"pcv", name:"Vis du reniflard de carter", en:"Crankcase breather bolts", m:"M6", dir:[0,0,-1],
+   pts:[[22,380,-129,1],[100,346,-129,2],[180,380,-129,3],[140,380,-129,4],[60,380,-129,5],[60,346,-129,6],[110,380,-129,7],[150,346,-129,8],[180,346,-129,9],[22,346,-129,10]],
+   src:SRC.head, torque:"11 Nm", st:["Serrer dans l'ordre 1 … 10 à 11 Nm"], note:"Positions schématiques (ordre conforme au manuel)."});
+B({id:"hpb", part:"hpfp", name:"Vis de pompe haute pression", en:"Bolts for high-pressure pump", m:"M6", renew:true, dir:[0,1,0], seq:false,
+   pts:[[208,384,52,0],[179,384,1,0],[236,384,1,0]], src:SRC.intake, torque:"8 Nm + 90°", st:["M6 : 8 Nm","Tourner de 90°"],
+   note:"Filetage M8 (autres versions) : 20 Nm. Conduite vers la rampe : 18 Nm, sans contrainte."});
+B({id:"g40b", part:"g40", name:"Vis du capteur de Hall G40", en:"Bolt", m:"M6", dir:[0,0,1], seq:false, pts:[[-178,356,100,0]], src:SRC.head, torque:"9 Nm", st:["9 Nm"]});
+B({id:"plug", part:"head", name:"Bougies d'allumage", en:"Spark plug", m:"M14", dir:[0,1,0], seq:false,
+   pts:[[-132,384,0,0],[-44,384,0,0],[44,384,0,0],[132,384,0,0]], src:SRC.ign, torque:"25 Nm", st:["25 Nm"], note:"Douille 3122 B. Les bobines (sans couple) se retirent avant."});
+// Distribution
+B({id:"tcub", part:"tcu", name:"Vis du carter de distribution supérieur", en:"Timing chain cover (top) bolts", m:"M6", dir:[-1,0,0],
+   pts:[[-253,312,92,1],[-253,312,-92,2],[-253,244,72,3],[-253,385,10,4],[-253,244,-72,5]], src:SRC.covers,
+   torque:"9 Nm", st:["Serrer à la main dans l'ordre 1 … 5","Serrer à 9 Nm"], note:"Clé V.A.G 1783 avec embout plat 10 mm."});
+(function(){
+  const img=[[13,125,97],[11,178,98],[10,222,98],[12,270,98],[9,90,137],[8,268,160],[7,45,178],[6,312,203],[5,68,213],[4,312,262],[1,80,258],[2,295,303],[3,82,318],[15,148,370],[14,210,373]];
+  const pts=img.map(([n,ix,iy])=>[-255, 234-(iy-95)/285*384, -112+(ix-40)/290*224, n]);
+  B({id:"tclb", part:"tcl", name:"Vis du carter de distribution inférieur", en:"Lower timing chain cover bolts", m:"M6", renew:true, dir:[-1,0,0], pts, src:SRC.covers,
+     torque:"8 Nm + 45°", st:["Serrer à 8 Nm dans l'ordre 1 … 15","Tourner de 45° dans l'ordre 1 … 15"],
+     note:"Version 15 vis. Version 8 vis : 4 Nm + 45°. Bouchon : à remplacer. Pions de centrage : vérifier leur présence."});
+})();
+B({id:"dipb", part:"dip", name:"Vis du tube de jauge", en:"Bolt", m:"M6", dir:[0,0,1], seq:false, pts:[[-205,230,130,0]], src:SRC.covers, torque:"9 Nm", st:["9 Nm"]});
+B({id:"n205b", part:"n205", name:"Vis de l'électrovanne N205", en:"Bolt", m:"M6", dir:[-1,0,0], seq:false, pts:[[-273,362,30,0],[-273,318,-10,0]], src:SRC.covers, torque:"9 Nm", st:["9 Nm"], note:"Nombre et position schématiques."});
+// Carters d'huile
+(function(){
+  const top=[14,12,10,8,6,4,2], bot=[13,11,9,7,5,3,1], xs=[-200,-135,-70,-5,60,125,190], pts=[];
+  xs.forEach((x,i)=>{pts.push([x,-151,-92,top[i]]);pts.push([x,-151,92,bot[i]]);});
+  B({id:"sub", part:"sumpU", name:"Vis du carter d'huile supérieur", en:"Upper part of sump bolts", m:"M8", renew:true, dir:[0,-1,0], pts, src:SRC.sump,
+     torque:"15 Nm + 90°", st:["Serrer à la main dans l'ordre 1 … 14","Serrer à 15 Nm","Tourner de 90°"],
+     note:"Vis accessibles carter inférieur déposé. Positions schématiques. Vis côté boîte (flèches) : couple selon filetage, M6 = 9 Nm, M8 = 20 Nm."});
+})();
+(function(){
+  const pts=[], topRow=[11,7,3,2,6,10,19], botRow=[12,8,4,1,5,9], right=[17,16,18,20], left=[14,13,15];
+  topRow.forEach((n,i)=>pts.push([-190+i*62,-241,-100,n]));
+  botRow.forEach((n,i)=>pts.push([-170+i*62,-241,100,n]));
+  right.forEach((n,i)=>pts.push([198,-241,-60+i*40,n]));
+  left.forEach((n,i)=>pts.push([-198,-241,-40+i*40,n]));
+  B({id:"slb", part:"sumpL", name:"Vis du carter d'huile inférieur", en:"Lower part of sump bolts", m:"M6", renew:true, dir:[0,-1,0], pts, src:SRC.sump,
+     torque:"8 Nm + 45°", st:["Serrer à la main dans l'ordre 1 … 20","Serrer à 8 Nm","Tourner de 45°"], note:"Pâte silicone, laisser sécher 30 min avant le plein d'huile. Positions schématiques."});
+})();
+B({id:"drainb", part:"drain", name:"Bouchon de vidange", en:"Oil drain plug", m:"M14", renew:false, dir:[0,-1,0], seq:false, pts:[[120,-252,40,0]], src:SRC.sump, torque:"30 Nm", st:["30 Nm"], note:"Remplacer le joint."});
+B({id:"sepb", part:"sep", name:"Vis du séparateur d'huile grossier", en:"Coarse oil separator bolts", m:"M6", dir:[0,0,1],
+   pts:[[4,75,95],[2,165,95],[1,235,95],[9,305,113],[6,42,180],[5,122,225],[3,207,207],[7,250,213],[8,312,212]].map(([n,ix,iy])=>[-80+(ix-40)/280*200, 90-(iy-95)/130*130, 123, n]),
+   src:SRC.sump, torque:"9 Nm", st:["Serrer dans l'ordre 1 … 9 à 9 Nm"], note:"Remplacer le joint."});
+// Paliers de vilebrequin
+(function(){
+  const rows=[[-176,7,8],[-88,3,4],[0,1,2],[88,5,6],[176,9,10]], pts=[], side=[];
+  rows.forEach(([x,a,b])=>{pts.push([x,-56,46,a],[x,-56,-46,b]); side.push([x,-20,118,0],[x,-20,-118,0]);});
+  B({id:"mb", part:"block", name:"Vis de chapeaux de paliers de vilebrequin", en:"Crankshaft bearing cap bolts", m:"M10", renew:true, dir:[0,-1,0], pts, src:SRC.crank, internal:true,
+     torque:"65 Nm + 90°", st:["Visser à la main (1 … 10 et vis latérales)","Prés serrer 1 … 10 à 65 Nm","Tourner 1 … 10 de 90° (clé rigide)"],
+     note:"Chapeau 1 côté poulie. Ne pas intervertir les coussinets. Visibles en mode transparence."});
+  B({id:"mbs", part:"block", name:"Vis latérales de paliers (flèches A)", en:"Bolts -arrows-", m:"M8", renew:true, dir:[0,0,1], pts:side.map(p=>{const d=p[2]>0?1:-1;return [p[0],p[1],p[2],0,d];}), src:SRC.crank, seq:false,
+     torque:"20 Nm + 90°", st:["Après les vis 1 … 10 : prés serrer à 20 Nm","Tourner de 90° (clé rigide)"], note:"Étapes 4 et 5 de la procédure du vilebrequin. Positions schématiques."});
+})();
+// Support d'accessoires et satellites
+(function(){
+  const img=[[1,190,80],[2,165,165],[3,220,165],[4,180,330],[5,285,285]];
+  const pts=img.map(([n,ix,iy])=>[-215+(ix-100)/230*105, 250-(iy-60)/290*220, 143, n]);
+  B({id:"brkb", part:"brk", name:"Vis du support d'accessoires", en:"Bracket for ancillaries bolts", m:"M10", renew:true, dir:[0,0,1], pts, src:SRC.belt,
+     torque:"20 Nm + 90°", st:["Engager le support, serrer d'abord la vis 4 à la main","Serrer à la main dans l'ordre 1 … 5","Serrer à 20 Nm","Tourner de 90°"],
+     note:"Vis à angle de serrage : à remplacer. Joints toriques neufs."});
+})();
+B({id:"ofb", part:"ofil", name:"Couvercle du filtre à huile", en:"Oil filter", m:"—", dir:[0,1,0], seq:false, pts:[[-180,361,150,0]], src:SRC.oil, torque:"22 Nm", st:["22 Nm (outil 3417)"]});
+B({id:"f1b", part:"f1", name:"Manocontact F1", en:"Oil pressure switch -F1-", m:"—", dir:[0,0,1], seq:false, pts:[[-125,215,163,0]], src:SRC.oil, torque:"20 Nm", st:["20 Nm"], note:"Joint à remplacer."});
+B({id:"ocb", part:"ocool", name:"Vis du refroidisseur d'huile", en:"Engine oil cooler bolts", m:"M6", dir:[0,0,1], seq:false, todo:true,
+   pts:[[-205,190,177,0],[-135,126,177,0]], src:SRC.oil, torque:"à compléter", st:["Ordre de serrage indiqué par une figure du manuel, couple non repris dans le texte"], note:"Valeur à vérifier dans le manuel (figure). Connexion : vis 15 Nm."});
+B({id:"ocx", part:"ocool", name:"Vis du raccord d'huile", en:"Bolt (connection)", m:"M8", dir:[0,0,1], seq:false, pts:[[-170,160,177,0]], src:SRC.oil, torque:"15 Nm", st:["15 Nm"]});
+B({id:"altb", part:"alt", name:"Vis de fixation de l'alternateur", en:"Bolt (alternator)", m:"M8", dir:[-1,0,0], seq:false, pts:[[-226,250,175,0],[-226,160,222,0]], src:SRC.belt, torque:"23 Nm", st:["23 Nm"], note:"Fixé sur le support d'accessoires."});
+B({id:"acb", part:"acomp", name:"Vis de fixation du compresseur de clim", en:"Bolt (A/C compressor)", m:"M8", dir:[0,0,1], seq:false, pts:[[-210,40,257,0],[-110,40,257,0],[-160,110,257,0]], src:SRC.belt, torque:"25 Nm", st:["25 Nm"], note:"Douilles de centrage. Laisser les flexibles branchés."});
+// Refroidissement
+(function(){
+  const img=[[3,130,55],[1,190,120],[5,255,72],[4,118,128],[2,215,198]];
+  const pts=img.map(([n,ix,iy])=>[100+(ix-100)/170*120, 222-(iy-50)/150*108, 169, n]);
+  B({id:"wpb", part:"wpump", name:"Vis de la pompe à eau", en:"Coolant pump bolts", m:"M6", dir:[0,0,1], pts, src:SRC.pump,
+     torque:"9 Nm", st:["Serrer dans l'ordre 1 … 5 à 9 Nm"], note:"Pousser d'abord la pompe sur le raccord, puis sur les pions de centrage du bloc."});
+})();
+B({id:"thb", part:"wpump", name:"Vis du raccord de thermostat", en:"Bolt (connection)", m:"M6", dir:[0,0,1], seq:false, pts:[[118,232,182,0],[150,232,182,0]], src:SRC.pump, torque:"9 Nm", st:["9 Nm"], note:"Clé Allen longue 5 mm T10058 pour la vis de droite."});
+B({id:"g62b", part:"g62", name:"Vis de plaquette G62 (version vissée)", en:"Bolt", m:"M5", dir:[0,1,0], seq:false, pts:[[180,227,150,0]], src:SRC.pump, torque:"4 Nm", st:["4 Nm"]});
+B({id:"gdb", part:"guard", name:"Vis du carter de courroie", en:"Toothed belt guard bolts", m:"M6", dir:[1,0,0], seq:false, pts:[[245,200,62,0],[245,140,94,0]], src:SRC.pump, torque:"9 Nm", st:["9 Nm"]});
+B({id:"spb", part:"guard", name:"Vis du pignon d'entraînement de pompe à eau", en:"Bolt (drive sprocket)", m:"M10", renew:true, dir:[1,0,0], seq:false, pts:[[246,168,78,0]], src:SRC.pump,
+   torque:"10 Nm + 90°", st:["10 Nm","Tourner de 90°"], note:"Filetage à gauche. Sur l'arbre d'équilibrage, sous le carter de courroie."});
+// Capteurs
+B({id:"knb", part:"knock", name:"Vis du capteur de cliquetis", en:"Knock sensor bolt", m:"M8", dir:[0,0,1], seq:false, pts:[[-20,150,120,0]], src:SRC.ign, torque:"20 Nm", st:["20 Nm"], note:"Le couple influence le fonctionnement du capteur."});
+B({id:"g28b", part:"g28", name:"Vis du capteur de régime", en:"Engine speed sender bolt", m:"M6", dir:[0,0,1], seq:false, pts:[[172,30,125,0]], src:SRC.ign, torque:"10 Nm", st:["10 Nm"]});
+// Poulie, côté boîte
+B({id:"dpb", part:"damper", name:"Vis de l'amortisseur de vibrations", en:"Vibration damper bolt", m:"M18x1,5", renew:true, dir:[-1,0,0], seq:false, pts:[[-298,0,0,0]], src:SRC.belt,
+   torque:"150 Nm + 90°", st:["150 Nm","Tourner de 90°"], note:"Contre-appui T10355. Ne pas tourner le vilebrequin hors PMH amortisseur déposé."});
+(function(){
+  const img=[[5,135,80],[7,222,75],[1,105,140],[4,272,145],[3,100,205],[2,278,205],[8,157,237],[6,220,237]];
+  const pts=img.map(([n,ix,iy])=>[237, -(iy-150)*1.1, -(ix-185)*1.1, n]);
+  B({id:"flb", part:"flange", name:"Vis du flasque d'étanchéité", en:"Sealing flange bolts", m:"M6", dir:[1,0,0], pts, src:SRC.flange,
+     torque:"9 Nm", st:["Visser à la main dans l'ordre 1 … 8","Serrer à 9 Nm"], note:"Attendre 30 min (pâte) avant de mettre l'huile."});
+})();
+(function(){
+  const pts=[]; for(let i=0;i<8;i++){const a=i/8*Math.PI*2; pts.push([283,Math.cos(a)*36,Math.sin(a)*36,0]);}
+  B({id:"dmfb", part:"dmf", name:"Vis du volant bimasse", en:"Bolt for dual-mass flywheel", m:"M10", renew:true, dir:[1,0,0], seq:false, pts, src:SRC.flange,
+     torque:"60 Nm + 90°", st:["60 Nm","Tourner de 90°"], note:"Desserrer à la main uniquement (pas de clé à chocs). Nombre de vis schématique."});
+})();
+// Supports et fixations d'accessoires
+B({id:"esb", part:"esup", name:"Vis support moteur → moteur", en:"Bolt, engine support to engine", m:"M10", renew:true, dir:[-1,0,0], seq:false, pts:[[-301,180,48,0],[-301,180,-48,0],[-301,270,0,0]], src:SRC.mount,
+   torque:"40 Nm + 180°", st:["40 Nm","Tourner de 180°"], note:"Embout T10099 pour les vis inférieures. Positions schématiques."});
+(function(){
+  const img=[[3,45],[4,110],[2,170],[5,225],[1,290]];
+  const pts=img.map(([n,ix])=>[160-(ix-45)/245*320, 276, -125, n]);
+  B({id:"tmn", part:"turbo", name:"Écrous collecteur/turbo → culasse", en:"Exhaust manifold nuts", m:"M8", renew:true, dir:[0,0,-1], pts, src:SRC.turbo3,
+     torque:"5 → 12 → 16 → 25 Nm", st:["Serrer à 5 Nm dans l'ordre 1 … 5","12 Nm","16 Nm","25 Nm"], note:"Écrous neufs. Goujons enduits de pâte haute température."});
+})();
+B({id:"tbr", part:"turbo", name:"Vis support turbo → bloc", en:"Turbocharger bracket to cylinder block", m:"M8", dir:[0,0,-1], seq:false, pts:[[-60,30,-122,0],[0,30,-122,0]], src:SRC.turboR, torque:"30 Nm", st:["30 Nm"], note:"Pâte haute température."});
+B({id:"toil", part:"turbo", name:"Vis banjo alimentation d'huile turbo (M12)", en:"Oil supply line banjo bolt", m:"M12", dir:[0,0,-1], seq:false, pts:[[80,170,-122,0]], src:SRC.turbo2, torque:"33 Nm", st:["33 Nm"], note:"Joints à remplacer. Remplir le turbo d'huile avant démarrage."});
+B({id:"tcool", part:"turbo", name:"Vis banjo liquide de refroidissement turbo (M14)", en:"Coolant line banjo bolt", m:"M14", dir:[0,0,-1], seq:false, pts:[[130,190,-122,0]], src:SRC.turbo2, torque:"38 Nm", st:["38 Nm"], note:"Joints à remplacer."});
+B({id:"tret", part:"turbo", name:"Vis retour d'huile turbo → bloc", en:"Oil return line bolts", m:"M6", dir:[0,0,-1], seq:false, pts:[[-40,-25,-118,0],[-10,-25,-118,0]], src:SRC.turbo2, torque:"9 Nm", st:["9 Nm"], note:"Joint à remplacer. Quattro : vis du retour d'huile au carter."});
+B({id:"imb", part:"intake", name:"Vis du collecteur d'admission", en:"Bolts for intake manifold", m:"M8", dir:[0,0,1], seq:false,
+   pts:[[-150,312,123,0],[-50,312,123,0],[50,312,123,0],[150,312,123,0],[-150,240,123,0],[-50,240,123,0],[50,240,123,0],[150,240,123,0]], src:SRC.rail,
+   torque:"3 Nm puis 9 Nm", st:["Prés serrer à 3 Nm","Serrer à 9 Nm"], note:"Nombre et positions schématiques."});
+B({id:"ims", part:"intake", name:"Support de collecteur → bloc", en:"Intake manifold support", m:"M8", dir:[0,0,1], seq:false, pts:[[0,118,106,0]], src:SRC.intake, torque:"vis 23 Nm · écrou 10 Nm", st:["Vis 23 Nm","Écrou 10 Nm"]});
+(function(){
+  const pts=[]; [[60,1],[120,1],[180,1],[-60,1],[-120,1],[-170,1],[0,1],[240,1]].forEach(([a])=>{const r=a*Math.PI/180;pts.push([242,10+Math.sin(r)*205,Math.cos(r)*205,0]);});
+  B({id:"gbb", part:"dsg", name:"Vis de liaison boîte DSG ↔ moteur", en:"Engine/gearbox securing bolts", m:"M10/M12", dir:[1,0,0], seq:false, todo:true, pts, src:SRC.gearbox,
+     torque:"à compléter", st:["Couples dans ELSA (non repris dans le manuel moteur)"], note:"Vérifier les douilles de centrage et la tôle intermédiaire avant montage."});
+})();
+B({id:"stb", part:"starter", name:"Vis du démarreur", en:"Starter bolts", m:"M10", dir:[1,0,0], seq:false, todo:true, pts:[[243,-10,190,0],[243,-70,120,0]], src:SRC.gearbox,
+   torque:"à compléter", st:["Valeur dans le groupe de réparation 27 (non disponible ici)"]});
+
+/* ============================================================ Rendu 3D */
+const canvas=document.getElementById("c");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color("#14171b");
+const camera=new THREE.PerspectiveCamera(38,1,5,20000);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=.09; controls.rotateSpeed=.8; controls.minDistance=250; controls.maxDistance=4500;
+controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
+
+scene.add(new THREE.HemisphereLight(0xdfe8f0,0x30281f,.75));
+const key=new THREE.DirectionalLight(0xffffff,.9); key.position.set(-900,1400,1100); scene.add(key);
+const rim=new THREE.DirectionalLight(0x9fc4ff,.45); rim.position.set(1200,500,-1300); scene.add(rim);
+const fill=new THREE.DirectionalLight(0xffe2c0,.25); fill.position.set(200,-900,600); scene.add(fill);
+
+// sol discret
+const grid=new THREE.GridHelper(2400,24,0x2a3038,0x20252b); grid.position.y=-420; scene.add(grid);
+
+const root=new THREE.Group(); scene.add(root);
+
+function rboxGeo(x0,x1,y0,y1,z0,z1,r){
+  const w=x1-x0,h=y1-y0,d=z1-z0; r=Math.max(.5,Math.min(r,w/2-.5,h/2-.5,d/2-.5));
+  const s=new THREE.Shape(), hw=w/2-r, hh=h/2-r;
+  s.moveTo(-hw,-hh-r); s.lineTo(hw,-hh-r); s.quadraticCurveTo(hw+r,-hh-r,hw+r,-hh); s.lineTo(hw+r,hh); s.quadraticCurveTo(hw+r,hh+r,hw,hh+r);
+  s.lineTo(-hw,hh+r); s.quadraticCurveTo(-hw-r,hh+r,-hw-r,hh); s.lineTo(-hw-r,-hh); s.quadraticCurveTo(-hw-r,-hh-r,-hw,-hh-r);
+  const g=new THREE.ExtrudeGeometry(s,{depth:Math.max(.1,d-2*r),bevelEnabled:true,bevelThickness:r,bevelSize:0.001,bevelSegments:3,curveSegments:4});
+  g.translate(0,0,-(d-2*r)/2); g.translate((x0+x1)/2,(y0+y1)/2,(z0+z1)/2); return g;
+}
+function cylGeo(ax,cx,cy,cz,r,len){
+  const g=new THREE.CylinderGeometry(r,r,len,40,1);
+  if(ax==="x") g.rotateZ(Math.PI/2); if(ax==="z") g.rotateX(Math.PI/2);
+  g.translate(cx,cy,cz); return g;
+}
+
+const partObj={}, partMeshes=[], pickables=[];
+const layerGroups={};
+LAYERS.forEach(L=>{const g=new THREE.Group(); g.name=L.id; root.add(g); layerGroups[L.id]=g;});
+
+PARTS.forEach(p=>{
+  const grp=new THREE.Group(); grp.userData={kind:"part",id:p.id};
+  const mat = p.ghost
+    ? new THREE.MeshStandardMaterial({color:p.col,transparent:true,opacity:.16,depthWrite:false,roughness:.6,metalness:0})
+    : new THREE.MeshStandardMaterial({color:p.col,roughness:.55,metalness:.35});
+  p.g.forEach(q=>{
+    const geo = q[0]==="b" ? rboxGeo(q[1],q[2],q[3],q[4],q[5],q[6],q[7]) : cylGeo(q[1],q[2],q[3],q[4],q[5],q[6]);
+    const m=new THREE.Mesh(geo,mat); m.userData={kind:"part",id:p.id}; grp.add(m); partMeshes.push(m); pickables.push(m);
+    if(p.ghost){ const e=new THREE.LineSegments(new THREE.EdgesGeometry(geo,25),new THREE.LineBasicMaterial({color:p.col,transparent:true,opacity:.45})); e.raycast=()=>{}; grp.add(e); }
+  });
+  grp.userData.mat=mat; grp.userData.base={col:new THREE.Color(p.col),op:mat.opacity};
+  layerGroups[p.layer].add(grp); partObj[p.id]=grp; p.obj=grp;
+});
+
+// détails non cliquables : fûts sur le plan de joint (visibles en éclaté)
+(function(){
+  const m=new THREE.MeshStandardMaterial({color:"#2b3036",roughness:.8,metalness:.1});
+  [-132,-44,44,132].forEach(x=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(41.25,41.25,2,40),m); c.position.set(x,222.5,0); partObj.block.add(c);});
+})();
+
+/* --- vis --- */
+const R={"M5":4,"M6":5,"M8":6.5,"M10":8,"M12":9.5,"M14":10.5,"M18x1,5":13,"M10/M12":9,"—":9};
+const MAT_REUSE=new THREE.MeshStandardMaterial({color:"#c3cad1",roughness:.35,metalness:.85});
+const MAT_RENEW=new THREE.MeshStandardMaterial({color:"#e8563f",roughness:.4,metalness:.5});
+const MAT_TODO =new THREE.MeshStandardMaterial({color:"#c9a227",roughness:.4,metalness:.5});
+const MAT_HIT=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false});
+const MAT_HL=new THREE.MeshStandardMaterial({color:"#f0a43a",emissive:"#f0a43a",emissiveIntensity:.55,roughness:.4,metalness:.3});
+const MAT_DONE=new THREE.MeshStandardMaterial({color:"#5fb98a",emissive:"#2f7a52",emissiveIntensity:.5,roughness:.4,metalness:.3});
+const boltAll=[];
+const up=new THREE.Vector3(0,1,0);
+BOLTS.forEach(b=>{
+  const part=PARTS.find(p=>p.id===b.part); b.partRef=part; b.meshes=[];
+  const r=R[b.m]||6.5, baseMat=b.todo?MAT_TODO:(b.renew?MAT_RENEW:MAT_REUSE);
+  b.pts.forEach((pt,i)=>{
+    const dir=new THREE.Vector3(...b.dir); if(pt[4]===1||pt[4]===-1){ if(b.id==="mbs") dir.set(0,0,pt[4]); }
+    const g=new THREE.Group();
+    const head=new THREE.Mesh(new THREE.CylinderGeometry(r*1.15,r*1.15,r*.75,6),baseMat); head.position.y=r*.375;
+    const wash=new THREE.Mesh(new THREE.CylinderGeometry(r*1.55,r*1.55,r*.18,20),MAT_REUSE); wash.position.y=r*.09;
+    const hit=new THREE.Mesh(new THREE.SphereGeometry(Math.max(13,r*2.1),8,6),MAT_HIT); hit.position.y=r*.5;
+    [head,wash,hit].forEach(m=>{m.userData={kind:"bolt",gid:b.id,idx:i};});
+    g.add(wash,head,hit);
+    g.quaternion.setFromUnitVectors(up,dir.clone().normalize());
+    g.position.set(pt[0],pt[1],pt[2]);
+    g.userData={kind:"bolt",gid:b.id,idx:i,home:new THREE.Vector3(pt[0],pt[1],pt[2]),dir:dir.clone().normalize(),head,baseMat};
+    pickables.push(hit);
+    part.obj.add(g); b.meshes.push(g); boltAll.push(g);
+  });
+});
+
+/* --- étiquettes numérotées --- */
+function labelSprite(txt){
+  const c=document.createElement("canvas"); c.width=c.height=128; const x=c.getContext("2d");
+  x.fillStyle="#f0a43a"; x.beginPath(); x.arc(64,64,54,0,Math.PI*2); x.fill();
+  x.lineWidth=8; x.strokeStyle="#1a1206"; x.stroke();
+  x.fillStyle="#1a1206"; x.font="700 64px JetBrains Mono, monospace"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String(txt),64,68);
+  const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true})); s.scale.set(30,30,1); s.renderOrder=10; return s;
+}
+
+/* ============================================================ État */
+const state={sel:null, explode:0, xray:false, ghost:true, bolts:true, layers:Object.fromEntries(LAYERS.map(l=>[l.id,true])), seq:null, tab:"fiche"};
+
+function applyExplode(){
+  const e=state.explode;
+  PARTS.forEach(p=>{p.obj.position.set(p.ex[0]*e,p.ex[1]*e,p.ex[2]*e);});
+  boltAll.forEach(g=>{const u=g.userData; g.position.copy(u.home).addScaledVector(u.dir,70*e);});
+}
+function applyVisibility(){
+  LAYERS.forEach(L=>{layerGroups[L.id].visible = state.layers[L.id] && (L.id!=="acc"||state.ghost);});
+  boltAll.forEach(g=>{
+    const b=BOLTS.find(x=>x.id===g.userData.gid);
+    let v=state.bolts; if(b.internal && !state.xray && !(state.seq&&state.seq.b===b)) v=false;
+    g.visible=v;
+  });
+  // les vis des accessoires restent visibles même si la silhouette est masquée
+  ["alt","acomp","intake","turbo","starter","dsg","tens"].forEach(id=>{
+    const o=partObj[id]; o.children.forEach(ch=>{ if(ch.userData.kind!=="bolt") ch.visible = state.ghost && state.layers.acc; });
+  });
+  layerGroups.acc.visible = state.layers.acc;
+}
+function applyMaterials(){
+  const selPart = state.sel && state.sel.kind==="part" ? state.sel.id : (state.sel&&state.sel.kind==="bolt" ? null : null);
+  const dimAll = !!state.seq;
+  PARTS.forEach(p=>{
+    const m=p.obj.userData.mat, base=p.obj.userData.base;
+    m.emissive && m.emissive.set(0x000000);
+    if(p.ghost){ m.opacity = dimAll?.07:base.op; m.color.copy(base.col); }
+    else {
+      const x = state.xray && ["block","sumpU","sumpL","head","camh","tcl","tcu"].includes(p.id);
+      const dim = dimAll && !(state.seq && state.seq.b.part===p.id);
+      m.transparent = x||dim; m.opacity = x?.22:(dim?.35:1); m.depthWrite = !(x||dim);
+      m.color.copy(base.col);
+    }
+    if(selPart===p.id){ m.emissive.set("#5a3a08"); }
+    m.needsUpdate=true;
+  });
+  boltAll.forEach(g=>{const u=g.userData; u.head.material=u.baseMat;});
+  if(state.sel && state.sel.kind==="bolt"){
+    const b=BOLTS.find(x=>x.id===state.sel.gid); b.meshes.forEach((g,i)=>{ g.userData.head.material = (i===state.sel.idx)?MAT_HL:g.userData.baseMat; });
+  }
+}
+
+/* ============================================================ Caméra */
+function resize(){
+  const w=canvas.clientWidth,h=canvas.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+  camera.setViewOffset(w,h,0,(document.getElementById("sheet").offsetHeight)*0.35,w,h);
+}
+let tween=null;
+function flyTo(target,dist,dirv){
+  const t0=performance.now(), p0=camera.position.clone(), q0=controls.target.clone();
+  const d = dirv ? dirv.clone().normalize() : camera.position.clone().sub(controls.target).normalize();
+  const p1=target.clone().addScaledVector(d,dist);
+  tween={t0,p0,q0,p1,q1:target.clone(),dur:650};
+}
+const fit=d=>d/Math.min(1,camera.aspect*1.25);
+function homeView(){ flyTo(new THREE.Vector3(30,40,0),fit(1500),new THREE.Vector3(-0.62,0.45,0.64)); }
+camera.position.set(-1100,900,1100); controls.target.set(30,60,0);
+
+function centerOf(obj){ const b=new THREE.Box3().setFromObject(obj); const c=new THREE.Vector3(); b.getCenter(c); const s=new THREE.Vector3(); b.getSize(s); return {c,r:Math.max(s.x,s.y,s.z)}; }
+
+/* ============================================================ Sélection */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+let down=null;
+canvas.addEventListener("pointerdown",e=>{down={x:e.clientX,y:e.clientY,t:performance.now()};});
+canvas.addEventListener("pointerup",e=>{
+  if(!down) return; const dx=e.clientX-down.x, dy=e.clientY-down.y; const quick=performance.now()-down.t<450; down=null;
+  if(dx*dx+dy*dy>64||!quick) return;
+  const r=canvas.getBoundingClientRect();
+  ndc.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ndc,camera);
+  const vis=pickables.filter(isShown);
+  const hits=ray.intersectObjects(vis,false);
+  if(!hits.length){ select(null); return; }
+  // priorité aux vis proches du premier impact
+  let h=hits[0]; const bh=hits.find(x=>x.object.userData.kind==="bolt" && x.distance<h.distance+40); if(bh) h=bh;
+  const ud=h.object.userData;
+  if(ud.kind==="bolt") select({kind:"bolt",gid:ud.gid,idx:ud.idx}); else select({kind:"part",id:ud.id});
+});
+function isShown(o){
+  let n=o; while(n){ if(!n.visible) return false; n=n.parent; }
+  if(o.userData.kind==="part"){ const p=PARTS.find(x=>x.id===o.userData.id); if(p.ghost && !state.ghost) return false; }
+  return true;
+}
+function select(s,focus){
+  if(state.seq) stopSeq();
+  state.sel=s; applyMaterials(); setTab("fiche"); renderSheet(); expandSheet(!!s);
+  document.getElementById("hint").style.opacity = s?0:1;
+  if(s && focus){
+    if(s.kind==="part"){ const {c,r}=centerOf(partObj[s.id]); flyTo(c,fit(Math.max(450,r*2.2))); }
+    else { const b=BOLTS.find(x=>x.id===s.gid); const g=b.meshes[s.idx]; const c=new THREE.Vector3(); g.getWorldPosition(c); flyTo(c,fit(620),g.userData.dir.clone().add(new THREE.Vector3(0,.5,0))); }
+  }
+}
+
+/* ============================================================ Ordre de serrage animé */
+let seqTimer=null;
+function startSeq(gid,loosen){
+  const b=BOLTS.find(x=>x.id===gid); stopSeq(true);
+  state.seq={b,loosen:!!loosen,labels:[]};
+  applyVisibility(); applyMaterials();
+  const key = loosen?4:3;
+  const nums=[...new Set(b.pts.map(p=>p[key]))].sort((a,c)=>a-c);
+  b.meshes.forEach((g,i)=>{ const s=labelSprite(b.pts[i][key]); s.position.set(0,30,0); g.add(s); s.visible=false; state.seq.labels.push(s); g.userData.head.material=g.userData.baseMat; });
+  const grpC=new THREE.Vector3(); b.meshes.forEach(g=>{const v=new THREE.Vector3(); g.getWorldPosition(v); grpC.add(v);}); grpC.multiplyScalar(1/b.meshes.length);
+  const span=new THREE.Box3(); b.meshes.forEach(g=>{const v=new THREE.Vector3(); g.getWorldPosition(v); span.expandByPoint(v);}); const sz=new THREE.Vector3(); span.getSize(sz);
+  flyTo(grpC,fit(Math.max(560,Math.max(sz.x,sz.y,sz.z)*2.3)),new THREE.Vector3(...b.dir).add(new THREE.Vector3(0.15,0.25,0.15)));
+  const bar=document.getElementById("seqbar"); bar.hidden=false;
+  document.getElementById("seqTitle").textContent=(loosen?"Desserrage · ":"Serrage · ")+b.name;
+  document.getElementById("seqLoosen").hidden = !b.loosen || loosen;
+  const steps=document.getElementById("seqSteps"); steps.innerHTML="";
+  (loosen?["Desserrer dans l'ordre"]:b.st).forEach((t,i)=>{const s=document.createElement("span"); s.textContent=(i+1)+". "+t; steps.appendChild(s);});
+  expandSheet(false);
+  let k=0;
+  const now=document.getElementById("seqNow");
+  const tick=()=>{
+    if(!state.seq) return;
+    if(k>0){ const prev=nums[k-1]; b.meshes.forEach((g,i)=>{ if(b.pts[i][key]===prev) g.userData.head.material=MAT_DONE; }); }
+    if(k>=nums.length){ now.textContent="Terminé"; [...steps.children].forEach(s=>s.classList.add("on")); return; }
+    const n=nums[k]; now.textContent="Vis "+n+" / "+nums[nums.length-1];
+    b.meshes.forEach((g,i)=>{ if(b.pts[i][key]===n){ g.userData.head.material=MAT_HL; state.seq.labels[i].visible=true; } });
+    if(k===0 && steps.children[0]) steps.children[0].classList.add("on");
+    k++; seqTimer=setTimeout(tick,850);
+  };
+  seqTimer=setTimeout(tick,700);
+}
+function stopSeq(keep){
+  clearTimeout(seqTimer);
+  if(state.seq){ state.seq.labels.forEach(s=>{s.parent&&s.parent.remove(s); s.material.map.dispose(); s.material.dispose();}); }
+  state.seq=null; document.getElementById("seqbar").hidden=true;
+  if(!keep){ applyVisibility(); applyMaterials(); }
+}
+document.getElementById("seqClose").onclick=()=>{stopSeq(); expandSheet(true);};
+document.getElementById("seqReplay").onclick=()=>{ if(state.seq){const s=state.seq; startSeq(s.b.id,s.loosen);} };
+document.getElementById("seqLoosen").onclick=()=>{ if(state.seq) startSeq(state.seq.b.id,true); };
+
+/* ============================================================ Panneau */
+const body=document.getElementById("body"), sheet=document.getElementById("sheet");
+function expandSheet(open){ sheet.classList.toggle("collapsed",!open); requestAnimationFrame(updSheetH); }
+function updSheetH(){ document.documentElement.style.setProperty("--sheet-h",sheet.offsetHeight+"px"); resize(); }
+document.getElementById("handle").onclick=()=>expandSheet(sheet.classList.contains("collapsed"));
+function setTab(t){ state.tab=t; ["fiche","calques","liste"].forEach(x=>document.getElementById("t"+x[0].toUpperCase()+x.slice(1)).setAttribute("aria-selected",String(x===t))); }
+document.getElementById("tFiche").onclick=()=>{setTab("fiche");renderSheet();expandSheet(true);};
+document.getElementById("tCalques").onclick=()=>{setTab("calques");renderSheet();expandSheet(true);};
+document.getElementById("tListe").onclick=()=>{setTab("liste");renderSheet();expandSheet(true);};
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const layerOf=id=>LAYERS.find(l=>l.id===id);
+function chipsFor(b){
+  let h=""; if(b.todo) h+='<span class="chip todo">Couple à compléter</span>';
+  h+= b.renew?'<span class="chip renew">À remplacer</span>':'<span class="chip ok">Réutilisable</span>';
+  if(b.seq!==false && b.pts.some(p=>p[3])) h+='<span class="chip acc">Ordre de serrage</span>';
+  return h;
+}
+function renderSheet(){
+  if(state.tab==="calques") return renderLayers();
+  if(state.tab==="liste") return renderList();
+  const s=state.sel;
+  if(!s){
+    body.innerHTML=`<p class="empty">Touchez une pièce ou une vis pour voir sa fiche : référence, couple, angle, remplacement et ordre de serrage animé.<br>Un doigt pour tourner, deux doigts pour zoomer et déplacer.</p>
+    <div class="legend"><span><i class="dot" style="background:#e8563f"></i>Vis à remplacer</span><span><i class="dot" style="background:#c3cad1"></i>Vis réutilisable</span><span><i class="dot" style="background:#c9a227"></i>Couple à compléter</span><span><i class="dot" style="background:#6fa8dc;opacity:.6"></i>Accessoire (silhouette)</span></div>
+    <p class="disclaimer">Couples, angles et ordres : manuel atelier VW moteur 1.8/2.0 TFSI chaîne (éd. 08.2018), valeurs CCTA. Formes et positions des pièces : schématiques. Références pièces : à compléter (catalogue ETKA).</p>`;
+    return;
+  }
+  if(s.kind==="part"){
+    const p=PARTS.find(x=>x.id===s.id), L=layerOf(p.layer);
+    const groups=BOLTS.filter(b=>b.part===p.id);
+    body.innerHTML=`<div class="card">
+      <h2>${esc(p.name)}</h2><div class="en">${esc(p.en)}</div>
+      <div class="chips"><span class="chip" style="border-color:${L.color};color:${L.color}">${esc(L.name)}</span>${p.ghost?'<span class="chip">Silhouette</span>':''}${p.renew?'<span class="chip renew">À remplacer</span>':''}</div>
+      <dl class="kv"><dt>Référence</dt><dd class="mono">à compléter</dd><dt>Vis</dt><dd>${groups.reduce((a,b)=>a+b.pts.length,0)} en ${groups.length} groupe${groups.length>1?"s":""}</dd></dl>
+      <p class="note">${esc(p.info||"")}</p>
+      <div class="actions"><button class="btn" id="aFocus">Centrer</button><button class="btn" id="aIso">${isoId===p.id?"Tout afficher":"Isoler"}</button></div>
+      ${groups.length?'<div class="sec">Visserie</div><div class="bg-list">'+groups.map(b=>`<button class="bg" data-g="${b.id}"><span class="t">${esc(b.name)}</span><span class="s">${b.pts.length} × ${esc(b.m)} · ${b.renew?"à remplacer":"réutilisable"}${(b.seq!==false&&b.pts.some(q=>q[3]))?" · ordre":""}</span><span class="v">${esc(b.torque)}</span></button>`).join("")+'</div>':''}
+      <p class="disclaimer"><a class="src" href="${p.src}" target="_blank" rel="noopener">Source : manuel atelier (page de la pièce)</a></p></div>`;
+    body.querySelectorAll(".bg").forEach(el=>el.onclick=()=>{select({kind:"bolt",gid:el.dataset.g,idx:0},true);});
+    document.getElementById("aFocus").onclick=()=>{const {c,r}=centerOf(partObj[p.id]); flyTo(c,fit(Math.max(450,r*2.2)));};
+    document.getElementById("aIso").onclick=()=>{isolate(isoId===p.id?null:p.id); renderSheet();};
+  } else {
+    const b=BOLTS.find(x=>x.id===s.gid), pt=b.pts[s.idx], p=b.partRef;
+    const hasSeq = b.seq!==false && b.pts.some(q=>q[3]);
+    body.innerHTML=`<div class="card">
+      <h2>${esc(b.name)}</h2><div class="en">${esc(b.en)} · sur ${esc(p.name.toLowerCase())}</div>
+      <div class="chips">${chipsFor(b)}</div>
+      <div class="torque">${esc(b.torque)}</div>
+      <dl class="kv" style="margin-top:10px"><dt>Référence</dt><dd class="mono">à compléter</dd><dt>Filetage</dt><dd class="mono">${esc(b.m)}</dd><dt>Quantité</dt><dd class="mono">${b.pts.length}</dd>${hasSeq?`<dt>Position</dt><dd class="mono">n° ${pt[3]} dans l'ordre</dd>`:''}</dl>
+      <div class="sec">Procédure</div><ol class="stages">${b.st.map(t=>`<li>${esc(t)}</li>`).join("")}</ol>
+      ${b.note?`<p class="note">${esc(b.note)}</p>`:''}${b.loosen?`<p class="note">${esc(b.loosen)}</p>`:''}
+      <div class="actions">${hasSeq?'<button class="btn pri" id="aSeq">▶ Ordre de serrage</button>':''}${b.loosen?'<button class="btn" id="aLoos">Ordre de desserrage</button>':''}<button class="btn" id="aPart">Voir la pièce</button></div>
+      <p class="disclaimer"><a class="src" href="${b.src}" target="_blank" rel="noopener">Source : manuel atelier</a>${b.todo?" · valeur absente du manuel moteur":""}</p></div>`;
+    if(hasSeq) document.getElementById("aSeq").onclick=()=>startSeq(b.id);
+    if(b.loosen) document.getElementById("aLoos").onclick=()=>startSeq(b.id,true);
+    document.getElementById("aPart").onclick=()=>select({kind:"part",id:p.id},true);
+  }
+}
+function renderLayers(){
+  const count=id=>PARTS.filter(p=>p.layer===id).length;
+  body.innerHTML='<div class="layers">'+LAYERS.map(L=>`<div class="lay" role="switch" tabindex="0" aria-checked="${state.layers[L.id]}" data-l="${L.id}"><i class="sw" style="background:${L.color}"></i><span class="n">${esc(L.name)}</span><span class="c">${count(L.id)}</span><i class="tg"></i></div>`).join("")+'</div>'+
+    '<div class="actions" style="margin-top:12px"><button class="btn" id="lAll">Tout afficher</button><button class="btn" id="lBlock">Bloc nu</button></div>';
+  body.querySelectorAll(".lay").forEach(el=>{const f=()=>{state.layers[el.dataset.l]=!state.layers[el.dataset.l]; applyVisibility(); renderLayers();}; el.onclick=f; el.onkeydown=e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();f();}};});
+  document.getElementById("lAll").onclick=()=>{isolate(null); LAYERS.forEach(L=>state.layers[L.id]=true); applyVisibility(); renderLayers();};
+  document.getElementById("lBlock").onclick=()=>{LAYERS.forEach(L=>state.layers[L.id]=(L.id==="struct")); applyVisibility(); renderLayers();};
+}
+let listQ="";
+function renderList(){
+  body.innerHTML=`<input class="search" id="q" type="search" placeholder="Rechercher : culasse, carter, 9 Nm…" value="${esc(listQ)}" aria-label="Rechercher une pièce ou une vis"><div class="list" id="lst"></div>`;
+  const q=document.getElementById("q"); q.oninput=()=>{listQ=q.value; fill();};
+  function fill(){
+    const t=listQ.trim().toLowerCase(); const lst=document.getElementById("lst"); let h="";
+    LAYERS.forEach(L=>{
+      PARTS.filter(p=>p.layer===L.id).forEach(p=>{
+        const gs=BOLTS.filter(b=>b.part===p.id);
+        const pm=!t||(p.name+" "+p.en).toLowerCase().includes(t);
+        const gm=gs.filter(b=>!t||(b.name+" "+b.en+" "+b.torque).toLowerCase().includes(t));
+        if(!pm && !gm.length) return;
+        h+=`<button class="li" data-p="${p.id}"><i class="sw" style="background:${L.color}"></i><span class="t">${esc(p.name)}<small>${esc(L.name)}</small></span><span class="v">${gs.reduce((a,b)=>a+b.pts.length,0)} vis</span></button>`;
+        gm.forEach(b=>{h+=`<button class="li" data-g="${b.id}" style="padding-left:22px"><i class="sw" style="background:${b.todo?'#c9a227':(b.renew?'#e8563f':'#c3cad1')}"></i><span class="t">${esc(b.name)}<small>${b.pts.length} × ${esc(b.m)}</small></span><span class="v">${esc(b.torque)}</span></button>`;});
+      });
+    });
+    lst.innerHTML=h||'<p class="empty">Aucun résultat.</p>';
+    lst.querySelectorAll(".li").forEach(el=>el.onclick=()=>{
+      if(el.dataset.p){ ensureVisible(el.dataset.p); select({kind:"part",id:el.dataset.p},true); }
+      else { const b=BOLTS.find(x=>x.id===el.dataset.g); ensureVisible(b.part); select({kind:"bolt",gid:b.id,idx:0},true); }
+    });
+  }
+  fill();
+}
+function ensureVisible(pid){ const p=PARTS.find(x=>x.id===pid); if(!state.layers[p.layer]){state.layers[p.layer]=true;} if(p.ghost&&!state.ghost){state.ghost=true;btnSet("btnGhost",true);} if(isoId&&isoId!==pid) isolate(null); applyVisibility(); }
+
+let isoId=null;
+function isolate(pid){
+  isoId=pid;
+  PARTS.forEach(p=>{ p.obj.visible = !pid || p.id===pid; });
+  if(pid){ const {c,r}=centerOf(partObj[pid]); flyTo(c,fit(Math.max(450,r*2.2))); }
+}
+
+/* ============================================================ Boutons */
+function btnSet(id,v){document.getElementById(id).setAttribute("aria-pressed",String(v));}
+document.getElementById("btnXray").onclick=()=>{state.xray=!state.xray; btnSet("btnXray",state.xray); applyVisibility(); applyMaterials();};
+document.getElementById("btnGhost").onclick=()=>{state.ghost=!state.ghost; btnSet("btnGhost",state.ghost); applyVisibility(); applyMaterials();};
+document.getElementById("btnBolts").onclick=()=>{state.bolts=!state.bolts; btnSet("btnBolts",state.bolts); applyVisibility();};
+document.getElementById("btnReset").onclick=()=>{ if(state.seq) stopSeq(); isolate(null); homeView(); };
+document.getElementById("ex").oninput=e=>{state.explode=e.target.value/100; applyExplode();};
+
+/* ============================================================ Boucle */
+function loop(t){
+  requestAnimationFrame(loop);
+  if(tween){ const k=Math.min(1,(t-tween.t0)/tween.dur), e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    camera.position.lerpVectors(tween.p0,tween.p1,e); controls.target.lerpVectors(tween.q0,tween.q1,e); if(k>=1) tween=null; }
+  controls.update(); renderer.render(scene,camera);
+}
+window.addEventListener("resize",resize);
+applyExplode(); applyVisibility(); applyMaterials(); renderSheet(); expandSheet(true);
+requestAnimationFrame(()=>{updSheetH(); homeView();});
+requestAnimationFrame(loop);
+</script>
