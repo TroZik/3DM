@@ -1,5 +1,17 @@
 # Historique des versions
 
+## v0.2.0 – Pièces internes (2026-10-19)
+
+- Équipage mobile : vilebrequin (avec pignons et roue cible G28), 4 pistons avec segments et axe, 4 bielles avec chapeaux et vis.
+- Culasse : arbres à cames admission et échappement, déphaseur d'admission, 16 soupapes, ressorts, linguets à galet, poussoirs hydrauliques.
+- Distribution : chaîne d'arbres à cames, chaîne d'équilibrage, chaîne de pompe à huile, tendeurs, rails, pont de palier.
+- Arbres d'équilibrage admission et échappement, pignon intermédiaire.
+- Lubrification : pompe à huile, crépine, chicane, gicleurs de fond de piston.
+- Nouvelle visserie interne : bielles, roue cible, vanne de distribution, tendeurs, axes de guidage, pignon intermédiaire, pompe à huile, gicleurs.
+- Fiches avec cotes et jeux du manuel : vilebrequin, pistons, segments, bielles, soupapes, arbres à cames.
+- Vue en coupe, bouton « Vue intérieure », animation de rotation du moteur.
+- Repère « À vérifier » pour les valeurs ambiguës du manuel (vis de bielle M8/M9, vis de pompe à huile).
+
 ## v0.1.0 – Prototype (2026-10-19)
 
 Première version : moteur EA888 CCTA (Audi A3 8PA 2012, DQ250 Quattro).

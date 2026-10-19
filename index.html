@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · bloc et visserie</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.2</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -133,6 +133,8 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <div class="tools">
     <button class="ib" id="btnXray" aria-pressed="false" title="Transparence du bloc" aria-label="Transparence du bloc"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 14l6-6M9 20l11-11M15 20l5-5"/></svg></button>
     <button class="ib" id="btnGhost" aria-pressed="true" title="Accessoires en silhouette" aria-label="Accessoires en silhouette"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="2"/></svg></button>
+    <button class="ib" id="btnCut" aria-pressed="false" title="Vue en coupe" aria-label="Vue en coupe"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h5v10H5zM14 7h5v10h-5z" stroke-dasharray="2 2"/></svg></button>
+    <button class="ib" id="btnRun" aria-pressed="false" title="Faire tourner le moteur" aria-label="Faire tourner le moteur"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M10 8.5v7l6-3.5z"/></svg></button>
     <button class="ib" id="btnBolts" aria-pressed="true" title="Afficher la visserie" aria-label="Afficher la visserie"><svg viewBox="0 0 24 24"><path d="M8 3h8l3 5-3 5H8L5 8z"/><path d="M12 13v8"/></svg></button>
   </div>
 
@@ -448,6 +450,242 @@ B({id:"ims", part:"intake", name:"Support de collecteur → bloc", en:"Intake ma
 B({id:"stb", part:"starter", name:"Vis du démarreur", en:"Starter bolts", m:"M10", dir:[1,0,0], seq:false, todo:true, pts:[[243,-10,190,0],[243,-70,120,0]], src:SRC.gearbox,
    torque:"à compléter", st:["Valeur dans le groupe de réparation 27 (non disponible ici)"]});
 
+/* ============================================================
+   v0.2 – Pièces internes (équipage mobile, distribution, soupapes, équilibrage, pompe à huile)
+   Cotes : manuel atelier (vilebrequin, pistons, bielles, soupapes, jeux). Formes : schématiques.
+   ============================================================ */
+SRC.rods  = MAN+"enginecrankshaft_group_pistons/crankshaft/assembly_overview_pistons_and_conrods/";
+SRC.cdim  = MAN+"enginecrankshaft_group_pistons/crankshaft/crankshaft_dimensions/";
+SRC.pdim  = MAN+"enginecrankshaft_group_pistons/crankshaft/piston_and_cylinder_dimensions/";
+SRC.camax = MAN+"engine_cylinder_head_valve_gear/valve_gear/checking_axial_clearance_of_camshafts/";
+SRC.wheel = MAN+"enginecrankshaft_group_pistons/crankshaft/assembly_overview_crankshaft/removing_and_installing_sender_wheel/";
+SRC.opump = MAN+"engine_lubrication/sump_and_oil_pump/removing_and_installing_oil_pump/";
+
+LAYERS.splice(LAYERS.length-1,0,
+  {id:"move",  name:"Équipage mobile", color:"#d98c5f", internal:true},
+  {id:"valve", name:"Arbres à cames et soupapes", color:"#7fc4b8", internal:true},
+  {id:"chain", name:"Chaînes et tendeurs", color:"#c7b46a", internal:true},
+  {id:"bal",   name:"Arbres d'équilibrage", color:"#9aa7d8", internal:true},
+  {id:"ilube", name:"Pompe à huile et gicleurs", color:"#e0b050", internal:true}
+);
+
+const ENG = {
+  CR:46.4, CL:144, CH:31, L:9,                 // demi-course, entraxe bielle, hauteur de compression, levée (indicative)
+  CYL:[-132,-44,44,132],
+  THROW:{"-132":0,"-44":180,"44":180,"132":0},  // manetons 1-4 et 2-3 opposés
+  PHASE:{"-132":0,"44":180,"132":360,"-44":540},// ordre d'allumage 1-3-4-2
+  CAM_Y:365, CAM_IN_Z:50, CAM_EX_Z:-50,
+  VIN:{dx:18,z:30,head:16.9,len:103.97}, VEX:{dx:16,z:-30,head:14,len:101.87}
+};
+const deg=Math.PI/180;
+function wrap720(a){ a%=720; if(a<-360)a+=720; if(a>360)a-=720; return a; }
+function liftAt(thetaDeg, cyl, peak){ const d=wrap720(thetaDeg-ENG.PHASE[cyl]-peak); return Math.abs(d)<120 ? ENG.L*Math.pow(Math.cos(Math.PI*d/240),2) : 0; }
+
+/* --- helpers de construction --- */
+function M(col,opt){ return new THREE.MeshStandardMaterial(Object.assign({color:col,roughness:.45,metalness:.6},opt||{})); }
+function cylX(r,len,x){ const g=new THREE.CylinderGeometry(r,r,len,36); g.rotateZ(Math.PI/2); g.translate(x||0,0,0); return g; }
+function ringX(ro,ri,len){ const s=new THREE.Shape(); s.absarc(0,0,ro,0,Math.PI*2,false); const h=new THREE.Path(); h.absarc(0,0,ri,0,Math.PI*2,true); s.holes.push(h);
+  const g=new THREE.ExtrudeGeometry(s,{depth:len,bevelEnabled:false,curveSegments:36}); g.translate(0,0,-len/2); g.rotateY(Math.PI/2); return g; }
+function sprocketGeo(r,teeth,len){
+  const s=new THREE.Shape(); const n=teeth*2;
+  for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, rr=i%2? r : r+3.2; const x=Math.cos(a)*rr, y=Math.sin(a)*rr; i?s.lineTo(x,y):s.moveTo(x,y); }
+  const h=new THREE.Path(); h.absarc(0,0,Math.min(10,r*.4),0,Math.PI*2,true); s.holes.push(h);
+  const g=new THREE.ExtrudeGeometry(s,{depth:len,bevelEnabled:false}); g.translate(0,0,-len/2); g.rotateY(Math.PI/2); return g; }
+function lobeGeo(base,nose,len){ // nez vers −Y
+  const s=new THREE.Shape(); const N=48;
+  for(let i=0;i<=N;i++){ const a=i/N*Math.PI*2; const d=Math.atan2(Math.sin(a+Math.PI/2),Math.cos(a+Math.PI/2));
+    const k=Math.abs(d)<1.25? Math.pow(Math.cos(d/1.25*Math.PI/2),2):0; const r=base+(nose-base)*k; const x=Math.cos(a)*r, y=Math.sin(a)*r; i?s.lineTo(x,y):s.moveTo(x,y); }
+  const g=new THREE.ExtrudeGeometry(s,{depth:len,bevelEnabled:false}); g.translate(0,0,-len/2); g.rotateY(Math.PI/2); return g; }
+function helixGeo(r,h,turns,wire){
+  const pts=[]; const N=turns*24; for(let i=0;i<=N;i++){ const t=i/N; pts.push(new THREE.Vector3(Math.cos(t*turns*Math.PI*2)*r, t*h, Math.sin(t*turns*Math.PI*2)*r)); }
+  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),N,wire,6,false); }
+function hull2(pts){ pts=pts.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]); const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lo=[],up=[]; for(const p of pts){ while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0) lo.pop(); lo.push(p);} for(const p of pts.slice().reverse()){ while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0) up.pop(); up.push(p);} up.pop(); lo.pop(); return lo.concat(up); }
+function chainCurve(x,sprockets){ const s=[]; sprockets.forEach(([y,z,r])=>{ for(let i=0;i<40;i++){const a=i/40*Math.PI*2; s.push([y+Math.cos(a)*(r+3),z+Math.sin(a)*(r+3)]);} });
+  const h=hull2(s); return new THREE.CatmullRomCurve3(h.map(([y,z])=>new THREE.Vector3(x,y,z)),true,"catmullrom",.1); }
+function chainMesh(curve,col,pitch){
+  const len=curve.getLength(), n=Math.round(len/pitch); const geo=new THREE.BoxGeometry(3.5,pitch*.92,7);
+  const im=new THREE.InstancedMesh(geo,M(col,{metalness:.8,roughness:.35}),n); im.userData.chain={curve,n,len};
+  placeChain(im,0); return im; }
+const _o=new THREE.Object3D(), _t=new THREE.Vector3(), _up=new THREE.Vector3(0,1,0);
+function placeChain(im,off){ const {curve,n}=im.userData.chain; for(let i=0;i<n;i++){ let u=(i/n+off)%1; if(u<0)u+=1; curve.getPointAt(u,_o.position); curve.getTangentAt(u,_t); _o.quaternion.setFromUnitVectors(_up,_t); _o.updateMatrix(); im.setMatrixAt(i,_o.matrix);} im.instanceMatrix.needsUpdate=true; }
+
+/* --- Vilebrequin --- */
+PARTS.push({id:"crank", layer:"move", internal:true, name:"Vilebrequin", en:"Crankshaft", col:"#b9a48c", src:SRC.crank,
+  info:"Tourillons Ø 58,00 mm, manetons Ø 47,80 mm (cote de base, pas de rectification prévue). Jeu axial : 0,07–0,23 mm (limite 0,30), cales de butée sur le palier 3. Jeu radial : 0,017–0,037 mm (limite 0,15, Plastigage, chapeaux à 60 Nm). Ne pas le poser sur la roue cible.",
+  ex:[0,-230,0], anim:(p,th)=>{ p.inner.rotation.x=th; },
+  build:(g,mat)=>{
+    [-176,-88,0,88,176].forEach(x=>g.add(new THREE.Mesh(cylX(29,24,x),mat)));
+    ENG.CYL.forEach(c=>{ const t=ENG.THROW[c]*deg, y=Math.cos(t)*ENG.CR, z=Math.sin(t)*ENG.CR;
+      const pin=new THREE.Mesh(cylX(23.9,26,c),mat); pin.position.set(0,y,z); g.add(pin);
+      [-1,1].forEach(sd=>{ const w=new THREE.Group(); w.rotation.x=t; w.position.x=c+sd*22;
+        const arm=new THREE.Mesh(rboxGeo(-7,7,-10,ENG.CR+26,-30,30,6),mat); w.add(arm);
+        const cw=new THREE.Mesh(new THREE.CylinderGeometry(66,66,14,32,1,false,Math.PI,Math.PI),mat); cw.rotation.z=Math.PI/2; w.add(cw);
+        g.add(w); }); });
+    g.add(new THREE.Mesh(cylX(20,70,-222),mat));            // nez
+    g.add(new THREE.Mesh(cylX(44,30,203),mat));             // bride volant
+    const sm=M("#8c7a63"); [[-246,26,22],[-236,22,19],[-230,20,17]].forEach(([x,r,t])=>{const s=new THREE.Mesh(sprocketGeo(r,t,6),sm); s.position.x=x; g.add(s);});
+  }});
+PARTS.push({id:"wheel", layer:"move", internal:true, name:"Roue cible du capteur G28", en:"Sender wheel", col:"#6b5b4a", src:SRC.wheel,
+  info:"Montage dans une seule position (trous décalés). À remplacer dès que ses vis ont été desserrées.", ex:[0,-230,0], anim:(p,th)=>{p.inner.rotation.x=th;},
+  build:(g,mat)=>{ const m=new THREE.Mesh(ringX(74,40,3),mat); m.position.x=184; g.add(m); }});
+B({id:"wheelb", part:"wheel", name:"Vis de la roue cible", en:"Bolt (sender wheel)", m:"M6", renew:true, dir:[1,0,0], seq:false,
+   pts:[0,120,240].map(a=>[186,Math.cos(a*deg)*52,Math.sin(a*deg)*52,0]), src:SRC.crank, torque:"10 Nm + 90°", st:["10 Nm","Tourner de 90°"],
+   note:"Si les vis ont été desserrées : remplacer la roue cible. Nombre de vis schématique."});
+
+/* --- Pistons et bielles (×4) --- */
+ENG.CYL.forEach((c,i)=>{
+  const n=i+1;
+  PARTS.push({id:"piston"+n, layer:"move", internal:true, name:"Piston, segments et axe – cyl. "+n, en:"Piston "+n, col:"#c9ccd0", src:SRC.rods,
+    info:"Ø piston 82,465 mm (sans revêtement graphite 0,02 mm), alésage 82,51 mm. Flèche sur la tête vers la poulie. Écart max. 0,04 mm (mesure à 10 mm du bas). Jeu à la coupe : segments de compression 0,20–0,40 (limite 0,8), racleur 0,25–0,50 (limite 0,8). Jeu dans la gorge : 1er 0,06–0,09 (0,20), 2e 0,03–0,06 (0,15). Coupes décalées de 120°, « TOP » vers la tête.",
+    ex:[0,90,0], cyl:c,
+    build:(g,mat)=>{
+      const top=new THREE.Mesh(new THREE.CylinderGeometry(41.2,41.2,30,40),mat); top.position.y=ENG.CH-15; g.add(top);
+      const skirt=new THREE.Mesh(new THREE.CylinderGeometry(40.6,40.6,26,40,1,true),mat); skirt.position.y=ENG.CH-43; g.add(skirt);
+      const rm=M("#3d4246",{metalness:.8}); [ENG.CH-5,ENG.CH-10,ENG.CH-16].forEach(y=>{const r=new THREE.Mesh(new THREE.CylinderGeometry(41.4,41.4,1.8,40),rm); r.position.y=y; g.add(r);});
+      const pin=new THREE.Mesh(cylX(10.5,64,0),M("#9aa0a6",{metalness:.9})); g.add(pin);
+    }, anim:(p,th)=>{ const a=th+ENG.THROW[c]*deg, py=Math.cos(a)*ENG.CR, pz=Math.sin(a)*ENG.CR; p.inner.position.set(c, py+Math.sqrt(ENG.CL*ENG.CL-pz*pz), 0); }});
+  PARTS.push({id:"rod"+n, layer:"move", internal:true, name:"Bielle et chapeau – cyl. "+n, en:"Conrod "+n, col:"#a0937f", src:SRC.rods,
+    info:"Bielle fracturée : chapeau appairé, une seule position. Repère vers la poulie. Remplacer par jeu complet. Jeu axial 0,10–0,35 mm (limite 0,40), jeu radial 0,02–0,06 mm (limite 0,09, Plastigage, anciennes vis sans le 90°). Coussinets centrés, ne pas intervertir.",
+    ex:[0,-110,0], cyl:c,
+    build:(g,mat)=>{
+      g.add(new THREE.Mesh(ringX(34,24.5,22),mat));
+      const sm=new THREE.Mesh(ringX(16,11,22),mat); sm.position.y=ENG.CL; g.add(sm);
+      g.add(new THREE.Mesh(rboxGeo(-9,9,24,ENG.CL-12,-11,11,4),mat));
+      const cap=new THREE.Mesh(rboxGeo(-11,11,-40,-22,-36,36,5),mat); g.add(cap);
+    }, anim:(p,th)=>{ const a=th+ENG.THROW[c]*deg, py=Math.cos(a)*ENG.CR, pz=Math.sin(a)*ENG.CR, yp=py+Math.sqrt(ENG.CL*ENG.CL-pz*pz);
+      p.inner.position.set(c,py,pz); p.inner.rotation.x=Math.atan2(-pz,yp-py); }});
+  B({id:"rodb"+n, part:"rod"+n, name:"Vis de bielle – cyl. "+n, en:"Conrod bolt", m:"M8", renew:true, check:true, dir:[0,-1,0], seq:false,
+     pts:[[0,-41,-28,0],[0,-41,28,0]], src:SRC.rods, torque:"30 Nm + 90° (M8)",
+     st:["Huiler filets et appui","M8 : 30 Nm puis 90°","M9 : 45 Nm puis 90°"], note:"Le manuel donne deux versions (M8 et M9) sans préciser le code moteur : vérifier le filetage sur la pièce."});
+});
+
+/* --- Arbres à cames, déphaseur, soupapes --- */
+function camBuild(z,isIn){ return (g,mat)=>{
+  g.add(new THREE.Mesh(cylX(12,470,-6),mat));
+  [-176,-88,0,88,176].forEach(x=>g.add(new THREE.Mesh(cylX(isIn?12:16,20,x+(x===-176?-30:0)),mat)));
+  const V=isIn?ENG.VIN:ENG.VEX, peak=isIn?110:-110;
+  ENG.CYL.forEach(c=>[-1,1].forEach(sd=>{ const l=new THREE.Mesh(lobeGeo(17,17+ENG.L,13),mat); l.position.x=c+sd*V.dx; l.rotation.x=(peak+ENG.PHASE[c])/2*deg; g.add(l); }));
+}; }
+PARTS.push({id:"camIn", layer:"valve", internal:true, name:"Arbre à cames d'admission", en:"Inlet camshaft", col:"#8fb7ad", src:SRC.valve,
+  info:"Jeu radial (Ø palier 24 mm) : 0,024–0,066 mm. Faux-rond max. 0,04 mm. Jeu axial : 0,05–0,17 mm. Paliers intégrés au carter d'arbres à cames. Came 4 lobes de la pompe haute pression non représentée.",
+  ex:[0,470,0], anim:(p,th)=>{p.inner.rotation.x=-th/2;}, pos:[0,ENG.CAM_Y,ENG.CAM_IN_Z], build:camBuild(ENG.CAM_IN_Z,true)});
+PARTS.push({id:"camEx", layer:"valve", internal:true, name:"Arbre à cames d'échappement", en:"Exhaust camshaft", col:"#8fb7ad", src:SRC.valve,
+  info:"Jeu radial : Ø palier 24 mm 0,024–0,066 mm, Ø 32 mm 0,030–0,051 mm. Faux-rond max. 0,04 mm. Jeu axial : 0,05–0,17 mm.",
+  ex:[0,470,0], anim:(p,th)=>{p.inner.rotation.x=-th/2;}, pos:[0,ENG.CAM_Y,ENG.CAM_EX_Z], build:camBuild(ENG.CAM_EX_Z,false)});
+PARTS.push({id:"phaser", layer:"valve", internal:true, name:"Déphaseur d'admission + pignon", en:"Camshaft adjuster (inlet)", col:"#6e8f88", src:SRC.chain,
+  info:"Variateur de calage de l'arbre d'admission, piloté par N205 via la vanne centrale.", ex:[-120,470,0], pos:[0,ENG.CAM_Y,ENG.CAM_IN_Z], anim:(p,th)=>{p.inner.rotation.x=-th/2;},
+  build:(g,mat)=>{ const s=new THREE.Mesh(sprocketGeo(40,30,6),M("#8c7a63")); s.position.x=-246; g.add(s); const b=new THREE.Mesh(cylX(34,14,-238),mat); g.add(b); }});
+PARTS.push({id:"exspr", layer:"valve", internal:true, name:"Pignon d'arbre à cames d'échappement", en:"Exhaust camshaft sprocket", col:"#8c7a63", src:SRC.chain,
+  info:"Marquer le sens de rotation de la chaîne avant dépose.", ex:[-120,470,0], pos:[0,ENG.CAM_Y,ENG.CAM_EX_Z], anim:(p,th)=>{p.inner.rotation.x=-th/2;},
+  build:(g,mat)=>{ const s=new THREE.Mesh(sprocketGeo(40,30,6),mat); s.position.x=-246; g.add(s); }});
+B({id:"tvalve", part:"phaser", name:"Vanne de distribution (vis centrale)", en:"Timing valve", m:"M18x1,5", dir:[-1,0,0], seq:false, pts:[[-250,0,0,0]], src:SRC.chain,
+   torque:"35 Nm", st:["35 Nm"], note:"Filetage à gauche. Dépose avec l'outil T10352."});
+function valveBuild(isIn){ return (g,mat)=>{
+  const V=isIn?ENG.VIN:ENG.VEX;
+  ENG.CYL.forEach(c=>[-1,1].forEach(sd=>{ const v=new THREE.Group(); v.position.set(c+sd*V.dx,0,V.z);
+    const head=new THREE.Mesh(new THREE.CylinderGeometry(V.head*.55,V.head,5,28),mat); head.position.y=229; v.add(head);
+    const st=new THREE.Mesh(new THREE.CylinderGeometry(3,3,V.len-6,10),mat); st.position.y=229+(V.len-6)/2; v.add(st);
+    const ret=new THREE.Mesh(new THREE.CylinderGeometry(9,7,3,16),M("#7d858c")); ret.position.y=329; v.add(ret);
+    v.userData.valve={cyl:c,peak:isIn?110:-110}; g.add(v); }));
+}; }
+function valveAnim(p,th){ const d=th/deg; p.inner.children.forEach(v=>{ const u=v.userData.valve; if(u) v.position.y=-liftAt(d,u.cyl,u.peak); }); }
+PARTS.push({id:"valIn", layer:"valve", internal:true, name:"Soupapes d'admission (×8)", en:"Inlet valves", col:"#c2c8cc", src:SRC.valve,
+  info:"Ø tête 33,85 ± 0,10 mm, Ø tige 5,98 ± 0,007 mm, longueur 103,97 mm, portée 45°. Aucune rectification : rodage uniquement. Contrôler les guides.",
+  ex:[0,250,0], anim:valveAnim, build:valveBuild(true)});
+PARTS.push({id:"valEx", layer:"valve", internal:true, name:"Soupapes d'échappement (×8)", en:"Exhaust valves", col:"#b7a99a", src:SRC.valve,
+  info:"Ø tête 28,0 ± 0,1 mm, Ø tige 5,955 ± 0,007 mm, longueur 101,87 mm, portée 45°. Aucune rectification : rodage uniquement.",
+  ex:[0,250,0], anim:valveAnim, build:valveBuild(false)});
+PARTS.push({id:"springs", layer:"valve", internal:true, name:"Ressorts, coupelles et joints de queue", en:"Valve springs, plates, stem seals", col:"#5f8f9a", src:SRC.valve,
+  info:"Joints de queue de soupape à remplacer lors du démontage. Clavettes et coupelles réutilisables si en bon état.", ex:[0,300,0],
+  build:(g,mat)=>{ [[ENG.VIN,110],[ENG.VEX,-110]].forEach(([V,pk])=>ENG.CYL.forEach(c=>[-1,1].forEach(sd=>{ const s=new THREE.Mesh(helixGeo(8.5,32,6,1.6),mat); s.position.set(c+sd*V.dx,296,V.z); s.userData.valve={cyl:c,peak:pk}; g.add(s); }))); },
+  anim:(p,th)=>{ const d=th/deg; p.inner.children.forEach(s=>{ const u=s.userData.valve; if(u) s.scale.y=(32-liftAt(d,u.cyl,u.peak))/32; }); }});
+PARTS.push({id:"follow", layer:"valve", internal:true, name:"Linguets à galet et poussoirs hydrauliques", en:"Roller rocker fingers / hydraulic compensation elements", col:"#9a8f7c", src:SRC.valve,
+  info:"Poussoirs hydrauliques : ne pas intervertir, huiler les surfaces de contact. Avec culasse neuve : huiler poussoirs, linguets et cames avant montage des arbres.", ex:[0,360,0],
+  build:(g,mat)=>{ [[ENG.VIN,1],[ENG.VEX,-1]].forEach(([V,s])=>ENG.CYL.forEach(c=>[-1,1].forEach(sd=>{ const x=c+sd*V.dx;
+    const f=new THREE.Mesh(rboxGeo(x-5,x+5,333,341,s>0?V.z-4:V.z-38+0,s>0?V.z+38:V.z+4,2),mat); g.add(f);
+    const hla=new THREE.Mesh(new THREE.CylinderGeometry(6,6,34,14),M("#6f767c")); hla.position.set(x,316,V.z+s*34); g.add(hla);
+    const rol=new THREE.Mesh(cylX(5,8,x),M("#c8ccd0")); rol.position.set(0,344,V.z+s*20); g.add(rol); }))); }});
+
+/* --- Chaînes, tendeurs, rails --- */
+const CAM_CHAIN = chainCurve(-246,[[0,0,26],[ENG.CAM_Y,ENG.CAM_IN_Z,40],[ENG.CAM_Y,ENG.CAM_EX_Z,40]]);
+const BAL_CHAIN = chainCurve(-236,[[0,0,22],[110,70,30],[20,-88,22]]);
+const OIL_CHAIN = chainCurve(-230,[[0,0,20],[-125,40,30]]);
+PARTS.push({id:"camChain", layer:"chain", internal:true, name:"Chaîne de distribution (arbres à cames)", en:"Camshaft timing chain", col:"#b8b29a", src:SRC.chain,
+  info:"Marquer le sens de rotation à la peinture avant dépose. Pignon de vilebrequin : les deux repères doivent être alignés.", ex:[-110,0,0],
+  build:(g)=>{ g.add(chainMesh(CAM_CHAIN,"#b8b29a",9.5)); }, anim:(p,th)=>{ placeChain(p.inner.children[0], th*26/p.inner.children[0].userData.chain.len); }});
+PARTS.push({id:"balChain", layer:"chain", internal:true, name:"Chaîne des arbres d'équilibrage", en:"Balancer shaft timing chain", col:"#a9a08a", src:SRC.bal,
+  info:"Entraîne l'arbre d'équilibrage côté échappement et le pignon intermédiaire.", ex:[-80,0,0],
+  build:(g)=>{ g.add(chainMesh(BAL_CHAIN,"#a9a08a",8)); }, anim:(p,th)=>{ placeChain(p.inner.children[0], th*22/p.inner.children[0].userData.chain.len); }});
+PARTS.push({id:"oilChain", layer:"chain", internal:true, name:"Chaîne de pompe à huile", en:"Drive chain for oil pump", col:"#9d9580", src:SRC.sump,
+  info:"Marquer le sens de rotation avant dépose.", ex:[-60,-160,0],
+  build:(g)=>{ g.add(chainMesh(OIL_CHAIN,"#9d9580",8)); }, anim:(p,th)=>{ placeChain(p.inner.children[0], th*20/p.inner.children[0].userData.chain.len); }});
+PARTS.push({id:"camTens", layer:"chain", internal:true, name:"Tendeur et rails de chaîne de distribution", en:"Chain tensioner, tensioning rail, guide rails", col:"#5c636a", src:SRC.chain,
+  info:"Le tendeur exerce une pression de ressort : le bloquer avec la goupille T40011 ou T40267 selon le modèle avant dépose.", ex:[-150,0,0],
+  build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(-256,-238,130,190,-112,-92,4),mat));
+    const rail=M("#2f3438",{metalness:.1,roughness:.8});
+    g.add(new THREE.Mesh(rboxGeo(-252,-240,70,330,-86,-74,4),rail)); g.add(new THREE.Mesh(rboxGeo(-252,-240,70,330,74,86,4),rail));
+    g.add(new THREE.Mesh(rboxGeo(-252,-240,410,420,-40,40,4),rail)); }});
+B({id:"ctb", part:"camTens", name:"Vis du tendeur de chaîne de distribution", en:"Bolt (chain tensioner)", m:"M6", dir:[-1,0,0], seq:false, pts:[[-257,180,-102,0],[-257,140,-102,0]], src:SRC.chain, torque:"9 Nm", st:["9 Nm"]});
+B({id:"cgp", part:"camTens", name:"Axes de guidage des rails", en:"Guide pins", m:"M8", dir:[-1,0,0], seq:false, pts:[[-253,100,80,0],[-253,300,80,0],[-253,300,-80,0],[-253,415,0,0]], src:SRC.chain, torque:"20 Nm", st:["20 Nm"], note:"Positions schématiques."});
+PARTS.push({id:"saddle", layer:"chain", internal:true, name:"Pont de palier (côté distribution)", en:"Bearing saddle", col:"#7b848c", src:SRC.chain,
+  info:"Maintient les arbres à cames côté distribution.", ex:[-60,420,0], build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(-232,-212,384,400,-72,72,4),mat)); }});
+B({id:"sdb", part:"saddle", name:"Vis du pont de palier", en:"Bolt (bearing saddle)", m:"M6", renew:true, dir:[0,1,0], seq:false, pts:[[-222,401,-60,0],[-222,401,0,0],[-222,401,60,0]], src:SRC.chain,
+   torque:"M6 : 8 Nm + 90° · M8 : 20 Nm + 90°", st:["M6 : 8 Nm puis 90°","M8 : 20 Nm puis 90°"], note:"Vis à remplacer. Nombre et positions schématiques."});
+
+/* --- Arbres d'équilibrage --- */
+function balBuild(g,mat,sprR){ g.add(new THREE.Mesh(cylX(13,330,-60),mat));
+  [-170,-20,90].forEach(x=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(24,24,40,24,1,false,0,Math.PI),mat); w.rotation.z=Math.PI/2; w.position.x=x; g.add(w); });
+  if(sprR){ const s=new THREE.Mesh(sprocketGeo(sprR,18,6),M("#8c7a63")); s.position.x=-236; g.add(s); }
+  else { g.add(new THREE.Mesh(cylX(50,10,-224),M("#7a6a55"))); } }
+PARTS.push({id:"balEx", layer:"bal", internal:true, name:"Arbre d'équilibrage côté échappement", en:"Balancer shaft (exhaust side)", col:"#8e9ac9", src:SRC.bal,
+  info:"À remplacer après dépose. Huiler les paliers. Tourne à deux fois le régime moteur.", ex:[0,0,-260], pos:[0,20,-88], anim:(p,th)=>{p.inner.rotation.x=2*th;},
+  build:(g,mat)=>balBuild(g,mat,22)});
+PARTS.push({id:"balIn", layer:"bal", internal:true, name:"Arbre d'équilibrage côté admission", en:"Balancer shaft (inlet side)", col:"#8e9ac9", src:SRC.bal,
+  info:"À remplacer après dépose. Support de palier : joint torique neuf huilé, pion dans l'alésage du bloc. Entraîné par le pignon intermédiaire (sens inverse).", ex:[0,0,260], pos:[0,20,88], anim:(p,th)=>{p.inner.rotation.x=-2*th;},
+  build:(g,mat)=>balBuild(g,mat,0)});
+PARTS.push({id:"balInt", layer:"bal", internal:true, name:"Pignon intermédiaire (équilibrage)", en:"Intermediate shaft sprocket", col:"#8c7a63", src:SRC.bal,
+  info:"Revêtement de rodage qui règle le jeu d'engrènement : remplacer le pignon dès que sa vis a été desserrée, sinon risque de casse moteur.", ex:[-90,60,120], pos:[0,110,70], anim:(p,th)=>{p.inner.rotation.x=th*22/30;},
+  build:(g,mat)=>{ const s=new THREE.Mesh(sprocketGeo(30,24,8),mat); s.position.x=-236; g.add(s); const ge=new THREE.Mesh(cylX(40,10,-224),M("#7a6a55")); g.add(ge); }});
+B({id:"bisb", part:"balInt", name:"Vis du pignon intermédiaire", en:"Securing bolt", m:"M10", renew:true, dir:[-1,0,0], seq:false, pts:[[-241,0,0,0]], src:SRC.bal,
+   torque:"10 Nm → 30 Nm + 90°", st:["10 Nm (clé dynamométrique)","Tourner le pignon : il doit être sans jeu, sinon desserrer et resserrer","30 Nm","Tourner de 90° (clé rigide)"],
+   note:"Pignon intermédiaire neuf obligatoire si la vis a été desserrée."});
+PARTS.push({id:"balTens", layer:"bal", internal:true, name:"Tendeur et rails de chaîne d'équilibrage", en:"Chain tensioner / guide rails (balancer)", col:"#5c636a", src:SRC.bal,
+  info:"Tendeur vissé dans le bloc, avec produit de freinage.", ex:[-90,0,0],
+  build:(g,mat)=>{ g.add(new THREE.Mesh(cylX(11,40,-226),mat).translateY(-40).translateZ(-58)); const rail=M("#2f3438",{metalness:.1,roughness:.8});
+    g.add(new THREE.Mesh(rboxGeo(-240,-232,-30,60,-74,-64,4),rail)); g.add(new THREE.Mesh(rboxGeo(-240,-232,30,100,40,50,4),rail)); }});
+B({id:"btb", part:"balTens", name:"Tendeur de chaîne d'équilibrage", en:"Chain tensioner", m:"M22", dir:[-1,0,0], seq:false, pts:[[-247,-40,-58,0]], src:SRC.bal, torque:"65 Nm", st:["Enduire de produit de freinage","65 Nm"]});
+B({id:"bgp", part:"balTens", name:"Axes de guidage (équilibrage)", en:"Guide pins", m:"M8", dir:[-1,0,0], seq:false, pts:[[-241,0,-69,0],[-241,50,45,0],[-241,90,45,0]], src:SRC.bal, torque:"20 Nm", st:["20 Nm"], note:"Positions schématiques."});
+B({id:"bsb", part:"balEx", name:"Vis de maintien d'arbre d'équilibrage", en:"Bolt", m:"M6", dir:[-1,0,0], seq:false, pts:[[-226,22,0,0]], src:SRC.bal, torque:"9 Nm", st:["9 Nm"], note:"Position schématique."});
+
+/* --- Pompe à huile, crépine, chicane, gicleurs --- */
+PARTS.push({id:"opump", layer:"ilube", internal:true, name:"Pompe à huile", en:"Oil pump", col:"#a88a52", src:SRC.opump,
+  info:"Entraînée par chaîne depuis le vilebrequin. Vérifier les 2 douilles de centrage. Avant dépose : tirer le ressort du tendeur (T10118) et le bloquer (T40265).", ex:[0,-200,0],
+  build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(-215,-130,-150,-98,5,80,8),mat)); const s=new THREE.Mesh(sprocketGeo(30,22,6),M("#8c7a63")); s.position.set(-230,-125,40); g.add(s);
+    g.add(new THREE.Mesh(cylX(9,20,-220).translate(0,-125,40),mat)); }});
+B({id:"opb", part:"opump", name:"Vis de la pompe à huile", en:"Securing bolts", m:"M8", check:true, dir:[0,-1,0], seq:false, pts:[[-205,-151,15,0],[-140,-151,15,0],[-172,-151,72,0]], src:SRC.sump,
+   torque:"M6 : 9 Nm · M8 : 20 Nm", st:["M6 : 9 Nm","M8 : 20 Nm"], note:"Couples du repère « vis de fixation » de la vue d'ensemble carter/pompe : à confirmer. Positions schématiques."});
+PARTS.push({id:"oTens", layer:"ilube", internal:true, name:"Tendeur de chaîne de pompe à huile", en:"Chain tensioner (oil pump)", col:"#5c636a", src:SRC.sump,
+  info:"Danger : le ressort saute vers le carter de distribution à la dépose du carter supérieur.", ex:[-60,-160,0], build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(-236,-226,-90,-50,-36,-14,4),mat)); }});
+B({id:"otb", part:"oTens", name:"Vis du tendeur (pompe à huile)", en:"Bolt", m:"M6", dir:[-1,0,0], seq:false, pts:[[-237,-70,-25,0]], src:SRC.sump, torque:"9 Nm", st:["9 Nm"]});
+PARTS.push({id:"suction", layer:"ilube", internal:true, name:"Tube d'aspiration et crépine", en:"Oil suction pipe", col:"#7a7f86", src:SRC.sump,
+  info:"Nettoyer la crépine si encrassée. Joints toriques à remplacer.", ex:[0,-330,0],
+  build:(g,mat)=>{ const t=new THREE.Mesh(new THREE.CylinderGeometry(12,12,86,16),mat); t.position.set(-120,-193,40); g.add(t); const s=new THREE.Mesh(new THREE.CylinderGeometry(42,42,8,28),mat); s.position.set(-120,-233,40); g.add(s); }});
+B({id:"spb2", part:"suction", name:"Vis du tube d'aspiration", en:"Bolt", m:"M6", dir:[0,-1,0], seq:false, pts:[[-120,-152,62,0]], src:SRC.sump, torque:"9 Nm", st:["9 Nm"]});
+PARTS.push({id:"baffle", layer:"ilube", internal:true, renew:true, name:"Chicane d'huile", en:"Baffle plate", col:"#3f4a52", src:SRC.opump,
+  info:"À remplacer à chaque dépose : ses nervures plastiques se déforment au serrage pour supprimer le jeu et les bruits.", ex:[0,-260,0],
+  build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(-100,190,-150,-146,-80,80,2),mat)); }});
+B({id:"bfb", part:"baffle", name:"Vis de la chicane", en:"Bolt (baffle plate)", m:"M6", dir:[0,-1,0], seq:false, pts:[[-90,-151,-60,0],[180,-151,-60,0],[-90,-151,60,0],[180,-151,60,0]], src:SRC.sump, torque:"9 Nm", st:["9 Nm"], note:"Positions schématiques."});
+PARTS.push({id:"jets", layer:"ilube", internal:true, name:"Gicleurs de fond de piston (×4)", en:"Oil spray jets", col:"#d0a64a", src:SRC.rods,
+  info:"Refroidissement des pistons. Chaque gicleur est fixé par sa soupape de surpression (ouverture 1,6–1,9 bar).", ex:[0,-60,-120],
+  build:(g,mat)=>{ ENG.CYL.forEach(c=>{ const t=new THREE.Mesh(new THREE.CylinderGeometry(3,3,46,8),mat); t.position.set(c,58,-66); t.rotation.x=.35; g.add(t); const b=new THREE.Mesh(rboxGeo(c-8,c+8,30,40,-76,-56,3),mat); g.add(b); }); }});
+B({id:"jetb", part:"jets", name:"Soupapes de surpression (gicleurs)", en:"Pressure relief valve", m:"M8", dir:[0,-1,0], seq:false, pts:ENG.CYL.map(c=>[c,29,-66,0]), src:SRC.rods, torque:"27 Nm", st:["27 Nm"], note:"Ouverture : 1,6–1,9 bar."});
+
+/* --- repositionnement de l'électrovanne N205 sur l'axe de l'arbre d'admission --- */
+(function(){ const n=PARTS.find(p=>p.id==="n205"); n.g=[["c","x",-262,ENG.CAM_Y,ENG.CAM_IN_Z,22,20]];
+  const b=BOLTS.find(x=>x.id==="n205b"); b.pts=[[-273,ENG.CAM_Y+28,ENG.CAM_IN_Z+22,0],[-273,ENG.CAM_Y-28,ENG.CAM_IN_Z-22,0]];
+  const ch=PARTS.find(p=>p.id==="camh"); ch.g=[["b",-226,226,330,382,-98,98,8]]; })();
+
 /* ============================================================ Rendu 3D */
 const canvas=document.getElementById("c");
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
@@ -490,14 +728,17 @@ LAYERS.forEach(L=>{const g=new THREE.Group(); g.name=L.id; root.add(g); layerGro
 
 PARTS.forEach(p=>{
   const grp=new THREE.Group(); grp.userData={kind:"part",id:p.id};
+  const inner=new THREE.Group(); grp.add(inner); p.inner=inner; if(p.pos) inner.position.set(...p.pos);
   const mat = p.ghost
     ? new THREE.MeshStandardMaterial({color:p.col,transparent:true,opacity:.16,depthWrite:false,roughness:.6,metalness:0})
     : new THREE.MeshStandardMaterial({color:p.col,roughness:.55,metalness:.35});
-  p.g.forEach(q=>{
+  (p.g||[]).forEach(q=>{
     const geo = q[0]==="b" ? rboxGeo(q[1],q[2],q[3],q[4],q[5],q[6],q[7]) : cylGeo(q[1],q[2],q[3],q[4],q[5],q[6]);
-    const m=new THREE.Mesh(geo,mat); m.userData={kind:"part",id:p.id}; grp.add(m); partMeshes.push(m); pickables.push(m);
-    if(p.ghost){ const e=new THREE.LineSegments(new THREE.EdgesGeometry(geo,25),new THREE.LineBasicMaterial({color:p.col,transparent:true,opacity:.45})); e.raycast=()=>{}; grp.add(e); }
+    const m=new THREE.Mesh(geo,mat); inner.add(m);
+    if(p.ghost){ const e=new THREE.LineSegments(new THREE.EdgesGeometry(geo,25),new THREE.LineBasicMaterial({color:p.col,transparent:true,opacity:.45})); e.raycast=()=>{}; inner.add(e); }
   });
+  if(p.build) p.build(inner,mat);
+  inner.traverse(o=>{ if(o.isMesh){ Object.assign(o.userData,{kind:"part",id:p.id}); partMeshes.push(o); pickables.push(o); } });
   grp.userData.mat=mat; grp.userData.base={col:new THREE.Color(p.col),op:mat.opacity};
   layerGroups[p.layer].add(grp); partObj[p.id]=grp; p.obj=grp;
 });
@@ -505,7 +746,7 @@ PARTS.forEach(p=>{
 // détails non cliquables : fûts sur le plan de joint (visibles en éclaté)
 (function(){
   const m=new THREE.MeshStandardMaterial({color:"#2b3036",roughness:.8,metalness:.1});
-  [-132,-44,44,132].forEach(x=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(41.25,41.25,2,40),m); c.position.set(x,222.5,0); partObj.block.add(c);});
+  [-132,-44,44,132].forEach(x=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(41.25,41.25,2,40),m); c.position.set(x,222.5,0); partObj.block.userData.detail=c; PARTS[0].inner.add(c); c.raycast=()=>{};});
 })();
 
 /* --- vis --- */
@@ -516,16 +757,19 @@ const MAT_TODO =new THREE.MeshStandardMaterial({color:"#c9a227",roughness:.4,met
 const MAT_HIT=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false});
 const MAT_HL=new THREE.MeshStandardMaterial({color:"#f0a43a",emissive:"#f0a43a",emissiveIntensity:.55,roughness:.4,metalness:.3});
 const MAT_DONE=new THREE.MeshStandardMaterial({color:"#5fb98a",emissive:"#2f7a52",emissiveIntensity:.5,roughness:.4,metalness:.3});
+const MATI_REUSE=MAT_REUSE.clone(), MATI_RENEW=MAT_RENEW.clone(), MATI_TODO=MAT_TODO.clone();
+const MAT_CHECK=new THREE.MeshStandardMaterial({color:"#c9a227",roughness:.4,metalness:.5}), MATI_CHECK=MAT_CHECK.clone();
 const boltAll=[];
 const up=new THREE.Vector3(0,1,0);
 BOLTS.forEach(b=>{
   const part=PARTS.find(p=>p.id===b.part); b.partRef=part; b.meshes=[];
-  const r=R[b.m]||6.5, baseMat=b.todo?MAT_TODO:(b.renew?MAT_RENEW:MAT_REUSE);
+  const I=!!part.internal, r=R[b.m]||(b.m==="M22"?12:6.5);
+  const baseMat = (b.todo||b.check)?(I?MATI_CHECK:MAT_CHECK):(b.renew?(I?MATI_RENEW:MAT_RENEW):(I?MATI_REUSE:MAT_REUSE));
   b.pts.forEach((pt,i)=>{
     const dir=new THREE.Vector3(...b.dir); if(pt[4]===1||pt[4]===-1){ if(b.id==="mbs") dir.set(0,0,pt[4]); }
     const g=new THREE.Group();
     const head=new THREE.Mesh(new THREE.CylinderGeometry(r*1.15,r*1.15,r*.75,6),baseMat); head.position.y=r*.375;
-    const wash=new THREE.Mesh(new THREE.CylinderGeometry(r*1.55,r*1.55,r*.18,20),MAT_REUSE); wash.position.y=r*.09;
+    const wash=new THREE.Mesh(new THREE.CylinderGeometry(r*1.55,r*1.55,r*.18,20),I?MATI_REUSE:MAT_REUSE); wash.position.y=r*.09;
     const hit=new THREE.Mesh(new THREE.SphereGeometry(Math.max(13,r*2.1),8,6),MAT_HIT); hit.position.y=r*.5;
     [head,wash,hit].forEach(m=>{m.userData={kind:"bolt",gid:b.id,idx:i};});
     g.add(wash,head,hit);
@@ -533,7 +777,7 @@ BOLTS.forEach(b=>{
     g.position.set(pt[0],pt[1],pt[2]);
     g.userData={kind:"bolt",gid:b.id,idx:i,home:new THREE.Vector3(pt[0],pt[1],pt[2]),dir:dir.clone().normalize(),head,baseMat};
     pickables.push(hit);
-    part.obj.add(g); b.meshes.push(g); boltAll.push(g);
+    part.inner.add(g); b.meshes.push(g); boltAll.push(g);
   });
 });
 
@@ -548,7 +792,7 @@ function labelSprite(txt){
 }
 
 /* ============================================================ État */
-const state={sel:null, explode:0, xray:false, ghost:true, bolts:true, layers:Object.fromEntries(LAYERS.map(l=>[l.id,true])), seq:null, tab:"fiche"};
+const state={sel:null, explode:0, xray:false, cut:false, run:false, theta:40*Math.PI/180, ghost:true, bolts:true, layers:Object.fromEntries(LAYERS.map(l=>[l.id,true])), seq:null, tab:"fiche"};
 
 function applyExplode(){
   const e=state.explode;
@@ -559,12 +803,12 @@ function applyVisibility(){
   LAYERS.forEach(L=>{layerGroups[L.id].visible = state.layers[L.id] && (L.id!=="acc"||state.ghost);});
   boltAll.forEach(g=>{
     const b=BOLTS.find(x=>x.id===g.userData.gid);
-    let v=state.bolts; if(b.internal && !state.xray && !(state.seq&&state.seq.b===b)) v=false;
+    let v=state.bolts; if(b.internal && !state.xray && !state.cut && !(state.seq&&state.seq.b===b)) v=false;
     g.visible=v;
   });
   // les vis des accessoires restent visibles même si la silhouette est masquée
   ["alt","acomp","intake","turbo","starter","dsg","tens"].forEach(id=>{
-    const o=partObj[id]; o.children.forEach(ch=>{ if(ch.userData.kind!=="bolt") ch.visible = state.ghost && state.layers.acc; });
+    const o=PARTS.find(p=>p.id===id).inner; o.children.forEach(ch=>{ if(ch.userData.kind!=="bolt") ch.visible = state.ghost && state.layers.acc; });
   });
   layerGroups.acc.visible = state.layers.acc;
 }
@@ -619,7 +863,12 @@ canvas.addEventListener("pointerup",e=>{
   ndc.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
   ray.setFromCamera(ndc,camera);
   const vis=pickables.filter(isShown);
-  const hits=ray.intersectObjects(vis,false);
+  const XR=["block","sumpU","sumpL","head","camh","tcl","tcu"];
+  const hits=ray.intersectObjects(vis,false).filter(h=>{
+    const ud=h.object.userData, part = ud.kind==="bolt" ? BOLTS.find(b=>b.id===ud.gid).partRef : PARTS.find(p=>p.id===ud.id);
+    if(state.cut && !part.internal && h.point.z>0) return false;
+    if(state.xray && ud.kind==="part" && XR.includes(part.id)) return false;
+    return true; });
   if(!hits.length){ select(null); return; }
   // priorité aux vis proches du premier impact
   let h=hits[0]; const bh=hits.find(x=>x.object.userData.kind==="bolt" && x.distance<h.distance+40); if(bh) h=bh;
@@ -695,7 +944,7 @@ document.getElementById("tListe").onclick=()=>{setTab("liste");renderSheet();exp
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const layerOf=id=>LAYERS.find(l=>l.id===id);
 function chipsFor(b){
-  let h=""; if(b.todo) h+='<span class="chip todo">Couple à compléter</span>';
+  let h=""; if(b.todo) h+='<span class="chip todo">Couple à compléter</span>'; if(b.check) h+='<span class="chip todo">À vérifier</span>';
   h+= b.renew?'<span class="chip renew">À remplacer</span>':'<span class="chip ok">Réutilisable</span>';
   if(b.seq!==false && b.pts.some(p=>p[3])) h+='<span class="chip acc">Ordre de serrage</span>';
   return h;
@@ -706,7 +955,7 @@ function renderSheet(){
   const s=state.sel;
   if(!s){
     body.innerHTML=`<p class="empty">Touchez une pièce ou une vis pour voir sa fiche : référence, couple, angle, remplacement et ordre de serrage animé.<br>Un doigt pour tourner, deux doigts pour zoomer et déplacer.</p>
-    <div class="legend"><span><i class="dot" style="background:#e8563f"></i>Vis à remplacer</span><span><i class="dot" style="background:#c3cad1"></i>Vis réutilisable</span><span><i class="dot" style="background:#c9a227"></i>Couple à compléter</span><span><i class="dot" style="background:#6fa8dc;opacity:.6"></i>Accessoire (silhouette)</span></div>
+    <div class="legend"><span><i class="dot" style="background:#e8563f"></i>Vis à remplacer</span><span><i class="dot" style="background:#c3cad1"></i>Vis réutilisable</span><span><i class="dot" style="background:#c9a227"></i>À compléter ou à vérifier</span><span><i class="dot" style="background:#6fa8dc;opacity:.6"></i>Accessoire (silhouette)</span></div>
     <p class="disclaimer">Couples, angles et ordres : manuel atelier VW moteur 1.8/2.0 TFSI chaîne (éd. 08.2018), valeurs CCTA. Formes et positions des pièces : schématiques. Références pièces : à compléter (catalogue ETKA).</p>`;
     return;
   }
@@ -716,7 +965,7 @@ function renderSheet(){
     body.innerHTML=`<div class="card">
       <h2>${esc(p.name)}</h2><div class="en">${esc(p.en)}</div>
       <div class="chips"><span class="chip" style="border-color:${L.color};color:${L.color}">${esc(L.name)}</span>${p.ghost?'<span class="chip">Silhouette</span>':''}${p.renew?'<span class="chip renew">À remplacer</span>':''}</div>
-      <dl class="kv"><dt>Référence</dt><dd class="mono">à compléter</dd><dt>Vis</dt><dd>${groups.reduce((a,b)=>a+b.pts.length,0)} en ${groups.length} groupe${groups.length>1?"s":""}</dd></dl>
+      <dl class="kv"><dt>Référence</dt><dd class="mono">à compléter</dd>${groups.length?`<dt>Vis</dt><dd>${groups.reduce((a,b)=>a+b.pts.length,0)} en ${groups.length} groupe${groups.length>1?"s":""}</dd>`:""}</dl>
       <p class="note">${esc(p.info||"")}</p>
       <div class="actions"><button class="btn" id="aFocus">Centrer</button><button class="btn" id="aIso">${isoId===p.id?"Tout afficher":"Isoler"}</button></div>
       ${groups.length?'<div class="sec">Visserie</div><div class="bg-list">'+groups.map(b=>`<button class="bg" data-g="${b.id}"><span class="t">${esc(b.name)}</span><span class="s">${b.pts.length} × ${esc(b.m)} · ${b.renew?"à remplacer":"réutilisable"}${(b.seq!==false&&b.pts.some(q=>q[3]))?" · ordre":""}</span><span class="v">${esc(b.torque)}</span></button>`).join("")+'</div>':''}
@@ -743,10 +992,11 @@ function renderSheet(){
 }
 function renderLayers(){
   const count=id=>PARTS.filter(p=>p.layer===id).length;
-  body.innerHTML='<div class="layers">'+LAYERS.map(L=>`<div class="lay" role="switch" tabindex="0" aria-checked="${state.layers[L.id]}" data-l="${L.id}"><i class="sw" style="background:${L.color}"></i><span class="n">${esc(L.name)}</span><span class="c">${count(L.id)}</span><i class="tg"></i></div>`).join("")+'</div>'+
-    '<div class="actions" style="margin-top:12px"><button class="btn" id="lAll">Tout afficher</button><button class="btn" id="lBlock">Bloc nu</button></div>';
+  body.innerHTML='<div class="layers">'+LAYERS.map(L=>(L.id==="move"?'<div class="sec">Intérieur du moteur · visible en coupe ou en transparence</div>':'')+`<div class="lay" role="switch" tabindex="0" aria-checked="${state.layers[L.id]}" data-l="${L.id}"><i class="sw" style="background:${L.color}"></i><span class="n">${esc(L.name)}</span><span class="c">${count(L.id)}</span><i class="tg"></i></div>`).join("")+'</div>'+
+    '<div class="actions" style="margin-top:12px"><button class="btn pri" id="lIn">Vue intérieure</button><button class="btn" id="lAll">Tout afficher</button><button class="btn" id="lBlock">Bloc nu</button></div>';
   body.querySelectorAll(".lay").forEach(el=>{const f=()=>{state.layers[el.dataset.l]=!state.layers[el.dataset.l]; applyVisibility(); renderLayers();}; el.onclick=f; el.onkeydown=e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();f();}};});
   document.getElementById("lAll").onclick=()=>{isolate(null); LAYERS.forEach(L=>state.layers[L.id]=true); applyVisibility(); renderLayers();};
+  document.getElementById("lIn").onclick=()=>{ LAYERS.forEach(L=>state.layers[L.id]=true); setCut(true); state.ghost=false; btnSet("btnGhost",false); applyVisibility(); applyMaterials(); renderLayers(); flyTo(new THREE.Vector3(-20,120,0),fit(1250),new THREE.Vector3(-0.35,0.35,0.87)); };
   document.getElementById("lBlock").onclick=()=>{LAYERS.forEach(L=>state.layers[L.id]=(L.id==="struct")); applyVisibility(); renderLayers();};
 }
 let listQ="";
@@ -786,19 +1036,33 @@ function isolate(pid){
 function btnSet(id,v){document.getElementById(id).setAttribute("aria-pressed",String(v));}
 document.getElementById("btnXray").onclick=()=>{state.xray=!state.xray; btnSet("btnXray",state.xray); applyVisibility(); applyMaterials();};
 document.getElementById("btnGhost").onclick=()=>{state.ghost=!state.ghost; btnSet("btnGhost",state.ghost); applyVisibility(); applyMaterials();};
+const CUT=new THREE.Plane(new THREE.Vector3(0,0,-1),0);
+renderer.localClippingEnabled=true;
+function setCut(v){
+  state.cut=v; btnSet("btnCut",v); const planes=v?[CUT]:null;
+  PARTS.forEach(p=>{ if(p.internal) return; p.obj.traverse(o=>{ if(!o.material||o.isSprite||o.userData.kind==="bolt") return; o.material.clippingPlanes=planes; o.material.side=v&&!p.ghost?THREE.DoubleSide:THREE.FrontSide; o.material.needsUpdate=true; }); });
+  [MAT_REUSE,MAT_RENEW,MAT_TODO,MAT_CHECK].forEach(m=>{m.clippingPlanes=planes; m.needsUpdate=true;});
+  applyVisibility();
+}
+document.getElementById("btnCut").onclick=()=>{ setCut(!state.cut); };
+document.getElementById("btnRun").onclick=()=>{ state.run=!state.run; btnSet("btnRun",state.run); };
+function updateAnim(){ PARTS.forEach(p=>{ if(p.anim) p.anim(p,state.theta); }); }
 document.getElementById("btnBolts").onclick=()=>{state.bolts=!state.bolts; btnSet("btnBolts",state.bolts); applyVisibility();};
 document.getElementById("btnReset").onclick=()=>{ if(state.seq) stopSeq(); isolate(null); homeView(); };
 document.getElementById("ex").oninput=e=>{state.explode=e.target.value/100; applyExplode();};
 
 /* ============================================================ Boucle */
+let lastT=0;
 function loop(t){
   requestAnimationFrame(loop);
+  const dt=Math.min(.05,(t-lastT)/1000); lastT=t;
+  if(state.run){ state.theta+=dt*Math.PI*2/3; updateAnim(); }
   if(tween){ const k=Math.min(1,(t-tween.t0)/tween.dur), e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
     camera.position.lerpVectors(tween.p0,tween.p1,e); controls.target.lerpVectors(tween.q0,tween.q1,e); if(k>=1) tween=null; }
   controls.update(); renderer.render(scene,camera);
 }
 window.addEventListener("resize",resize);
-applyExplode(); applyVisibility(); applyMaterials(); renderSheet(); expandSheet(true);
+updateAnim(); applyExplode(); applyVisibility(); applyMaterials(); renderSheet(); expandSheet(true);
 requestAnimationFrame(()=>{updSheetH(); homeView();});
 requestAnimationFrame(loop);
 </script>
