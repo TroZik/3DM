@@ -1,5 +1,16 @@
 # Historique des versions
 
+## v0.3.0 – Admission, échappement et turbo (2026-10-19)
+
+- Collecteur d'admission modélisé d'après les vues éclatées du manuel : plénum, 4 pipes, bride, nervures, support vers le bloc.
+- Boîtier papillon J338 (4 vis, 5 Nm), capsule et électrovanne N316 des volets, potentiomètre G336, sonde G42 (5 Nm), électrovanne N80.
+- Rampe haute pression, 4 injecteurs, transmetteur G247 (27 Nm), conduite HP pompe → rampe (adaptateur 25 Nm, écrou 18 Nm).
+- Pompe haute pression horizontale à 2 vis, sur la pompe à vide côté admission. Le reniflard passe côté échappement sur le carter d'arbres à cames.
+- Turbo K03 et collecteur d'échappement modélisés : bride 4 sorties, pipes en fonte, volute de turbine, carter central, compresseur alu, entrée coudée, sortie vers l'échangeur, bride de descente.
+- Périphérie du turbo : capsule de wastegate (10 Nm), N249 (7 Nm), N75 (3 Nm), raccord de sortie (9 Nm), support (30 Nm), conduites d'huile (33 Nm, 9 Nm) et de liquide (banjos 38 Nm).
+- Matières différenciées : plastique, fonte, alu, acier.
+- Correction : les arbres à cames tournent maintenant dans le même sens que la chaîne et le vilebrequin.
+
 ## v0.2.1 – Haut moteur corrigé (2026-10-19)
 
 - Reniflard (module de dégazage) déplacé sur le dessus du carter d'arbres à cames, côté boîte, comme sur l'EA888. Il était sur le côté, comme sur l'EA113.

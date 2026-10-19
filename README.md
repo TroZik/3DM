@@ -4,7 +4,7 @@ Visionneuse 3D interactive d'un moteur et de sa visserie, pensée pour le télé
 
 Premier modèle : **EA888 Gen 1 – code moteur CCTA** (2.0 TFSI), monté sur une **Audi A3 Sportback 8PA S line 2012**, boîte **DSG6 DQ250 (02E)**, transmission **Quattro**.
 
-> Statut : **v0.2.0** – pièces internes (prototype : v0.1.0)
+> Statut : **v0.3.0** – admission, échappement et turbo (prototype : v0.1.0)
 
 ## Fonctionnalités
 
@@ -14,6 +14,7 @@ Premier modèle : **EA888 Gen 1 – code moteur CCTA** (2.0 TFSI), monté sur un
 - **Ordre de serrage animé** (15 groupes), avec l'ordre de desserrage pour la culasse.
 - Accessoires (alternateur, clim, turbo, admission, démarreur, DSG) affichés en silhouette avec leurs vis de fixation sur le moteur.
 - **Pièces internes (v0.2)** : vilebrequin, bielles, pistons, arbres à cames, déphaseur, soupapes, ressorts, linguets et poussoirs, chaînes et tendeurs, arbres d'équilibrage, pompe à huile, gicleurs. Cotes et jeux du manuel dans les fiches.
+- **Admission et échappement (v0.3)** : collecteur d'admission, papillon, rampe, injecteurs, capteurs, turbo K03 avec son collecteur, capsule de wastegate, vannes et conduites.
 - **Vue en coupe** et **rotation du moteur** : pistons, bielles, cames, soupapes et chaînes s'animent (ordre d'allumage 1-3-4-2).
 - Vue éclatée, transparence du bloc, calques, recherche (par exemple « 9 Nm »).
 - Code couleur des têtes de vis : rouge = à remplacer, gris = réutilisable, jaune = couple à compléter ou à vérifier.

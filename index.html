@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.2.1</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -573,19 +573,19 @@ function camBuild(z,isIn){ return (g,mat)=>{
   g.add(new THREE.Mesh(cylX(12,470,-6),mat));
   [-176,-88,0,88,176].forEach(x=>g.add(new THREE.Mesh(cylX(isIn?12:16,20,x+(x===-176?-30:0)),mat)));
   const V=isIn?ENG.VIN:ENG.VEX, peak=isIn?110:-110;
-  ENG.CYL.forEach(c=>[-1,1].forEach(sd=>{ const l=new THREE.Mesh(lobeGeo(17,17+ENG.L,13),mat); l.position.x=c+sd*V.dx; l.rotation.x=(peak+ENG.PHASE[c])/2*deg; g.add(l); }));
+  ENG.CYL.forEach(c=>[-1,1].forEach(sd=>{ const l=new THREE.Mesh(lobeGeo(17,17+ENG.L,13),mat); l.position.x=c+sd*V.dx; l.rotation.x=-(peak+ENG.PHASE[c])/2*deg; /* arbre : +θ/2, même sens que la chaîne */ g.add(l); }));
 }; }
 PARTS.push({id:"camIn", layer:"valve", internal:true, name:"Arbre à cames d'admission", en:"Inlet camshaft", col:"#8fb7ad", src:SRC.valve,
   info:"Jeu radial (Ø palier 24 mm) : 0,024–0,066 mm. Faux-rond max. 0,04 mm. Jeu axial : 0,05–0,17 mm. Paliers intégrés au carter d'arbres à cames. Came 4 lobes de la pompe haute pression non représentée.",
-  ex:[0,470,0], anim:(p,th)=>{p.inner.rotation.x=-th/2;}, pos:[0,ENG.CAM_Y,ENG.CAM_IN_Z], build:camBuild(ENG.CAM_IN_Z,true)});
+  ex:[0,470,0], anim:(p,th)=>{p.inner.rotation.x=th/2;}, pos:[0,ENG.CAM_Y,ENG.CAM_IN_Z], build:camBuild(ENG.CAM_IN_Z,true)});
 PARTS.push({id:"camEx", layer:"valve", internal:true, name:"Arbre à cames d'échappement", en:"Exhaust camshaft", col:"#8fb7ad", src:SRC.valve,
   info:"Jeu radial : Ø palier 24 mm 0,024–0,066 mm, Ø 32 mm 0,030–0,051 mm. Faux-rond max. 0,04 mm. Jeu axial : 0,05–0,17 mm.",
-  ex:[0,470,0], anim:(p,th)=>{p.inner.rotation.x=-th/2;}, pos:[0,ENG.CAM_Y,ENG.CAM_EX_Z], build:camBuild(ENG.CAM_EX_Z,false)});
+  ex:[0,470,0], anim:(p,th)=>{p.inner.rotation.x=th/2;}, pos:[0,ENG.CAM_Y,ENG.CAM_EX_Z], build:camBuild(ENG.CAM_EX_Z,false)});
 PARTS.push({id:"phaser", layer:"valve", internal:true, name:"Déphaseur d'admission + pignon", en:"Camshaft adjuster (inlet)", col:"#6e8f88", src:SRC.chain,
-  info:"Variateur de calage de l'arbre d'admission, piloté par N205 via la vanne centrale.", ex:[-120,470,0], pos:[0,ENG.CAM_Y,ENG.CAM_IN_Z], anim:(p,th)=>{p.inner.rotation.x=-th/2;},
+  info:"Variateur de calage de l'arbre d'admission, piloté par N205 via la vanne centrale.", ex:[-120,470,0], pos:[0,ENG.CAM_Y,ENG.CAM_IN_Z], anim:(p,th)=>{p.inner.rotation.x=th/2;},
   build:(g,mat)=>{ const s=new THREE.Mesh(sprocketGeo(40,30,6),M("#8c7a63")); s.position.x=-246; g.add(s); const b=new THREE.Mesh(cylX(34,14,-238),mat); g.add(b); }});
 PARTS.push({id:"exspr", layer:"valve", internal:true, name:"Pignon d'arbre à cames d'échappement", en:"Exhaust camshaft sprocket", col:"#8c7a63", src:SRC.chain,
-  info:"Marquer le sens de rotation de la chaîne avant dépose.", ex:[-120,470,0], pos:[0,ENG.CAM_Y,ENG.CAM_EX_Z], anim:(p,th)=>{p.inner.rotation.x=-th/2;},
+  info:"Marquer le sens de rotation de la chaîne avant dépose.", ex:[-120,470,0], pos:[0,ENG.CAM_Y,ENG.CAM_EX_Z], anim:(p,th)=>{p.inner.rotation.x=th/2;},
   build:(g,mat)=>{ const s=new THREE.Mesh(sprocketGeo(40,30,6),mat); s.position.x=-246; g.add(s); }});
 B({id:"tvalve", part:"phaser", name:"Vanne de distribution (vis centrale)", en:"Timing valve", m:"M18x1,5", dir:[-1,0,0], seq:false, pts:[[-250,0,0,0]], src:SRC.chain,
    torque:"35 Nm", st:["35 Nm"], note:"Filetage à gauche. Dépose avec l'outil T10352."});
@@ -694,6 +694,158 @@ B({id:"jetb", part:"jets", name:"Soupapes de surpression (gicleurs)", en:"Pressu
   const b=BOLTS.find(x=>x.id==="n205b"); b.pts=[[-273,ENG.CAM_Y+28,ENG.CAM_IN_Z+22,0],[-273,ENG.CAM_Y-28,ENG.CAM_IN_Z-22,0]];
   const ch=PARTS.find(p=>p.id==="camh"); ch.g=[["b",-226,226,330,398,-98,98,8]]; })();
 
+/* ============================================================
+   v0.3 – Admission (collecteur, papillon, rampe, injecteurs, capteurs) et échappement (collecteur + turbo K03)
+   Formes reconstituées d'après les vues éclatées du manuel (A24-10577, N24-10518, N24-10769, A21-10301, A21-10134, A21-10135).
+   ============================================================ */
+SRC.railx = MAN+"mixture_preparation_system_electronic_inj.gas/injection_system/fuel_rail_exploded_view/";
+SRC.raild = MAN+"mixture_preparation_system_electronic_inj.gas/injection_system/removing_and_installing_intake_manifold_with_fuel_rail/disconnecting_fuel_rail_from_intake_manifold/";
+SRC.hpp   = MAN+"mixture_preparation_system_electronic_inj.gas/injection_system/assembly_overview_high-pressure_pump_with_fuel_pressure_regulating_valven276/";
+SRC.turbo1= MAN+"exhaust_turbocharger_g-charger/turbocharger/assembly_overview_turbocharger/part_i_(engine_codes_cawa_cawb_cbfa_ccta_cctb_ccza_cczb_cczc_cczd)/";
+SRC.turbo4= MAN+"exhaust_turbocharger_g-charger/turbocharger/assembly_overview_turbocharger/part_iv/";
+
+LAYERS.splice(LAYERS.findIndex(l=>l.id==="acc"),0,
+  {id:"adm", name:"Admission et injection", color:"#7d8a97"},
+  {id:"exh", name:"Échappement et turbo", color:"#c07a45"});
+
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+function tubeAlong(pts,r,seg){ return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p=>V3(...p)),false,"catmullrom",.5),seg||48,r,16,false); }
+function beamGeo(a,b,w,t){ const A=V3(...a),B=V3(...b),d=B.clone().sub(A),L=d.length(); const g=new THREE.BoxGeometry(L,t,w);
+  const q=new THREE.Quaternion().setFromUnitVectors(V3(1,0,0),d.normalize()); g.applyQuaternion(q); const m=A.clone().add(B).multiplyScalar(.5); g.translate(m.x,m.y,m.z); return g; }
+function voluteGeo(R,tube,arc){ const g=new THREE.TorusGeometry(R,tube,18,48,arc||Math.PI*1.85); g.rotateY(Math.PI/2); return g; }
+function cylAx(ax,c,r,len,seg){ const g=new THREE.CylinderGeometry(r,r,len,seg||32); if(ax==="x") g.rotateZ(Math.PI/2); if(ax==="z") g.rotateX(Math.PI/2); g.translate(...c); return g; }
+const PLASTIC={roughness:.82,metalness:.05}, CAST={roughness:.9,metalness:.25}, ALU={roughness:.45,metalness:.55};
+
+/* --- l'ancienne silhouette d'admission devient un collecteur modélisé --- */
+const PL={c:[20,168,232], r:50, len:230};           // plénum
+(function(){
+  const im=PARTS.find(p=>p.id==="intake");
+  Object.assign(im,{layer:"adm", ghost:false, col:"#2c3136", mat:PLASTIC, g:null, name:"Collecteur d'admission", en:"Intake manifold",
+    info:"Collecteur plastique à volets de tumble (volets d'air intégrés, pilotés par capsule à dépression). Joints de pipes à remplacer, ergot dans la rainure. Vis : 3 Nm puis 9 Nm.",
+    ex:[0,80,290], src:SRC.railx,
+    build:(g,mat)=>{
+      const pl=new THREE.Mesh(new THREE.CapsuleGeometry(PL.r,PL.len,8,24),mat); pl.rotation.z=Math.PI/2; pl.position.set(...PL.c); g.add(pl);
+      g.add(new THREE.Mesh(rboxGeo(-178,178,252,306,122,134,6),mat));                       // bride côté culasse
+      ENG.CYL.forEach(c=>{ const xe=c+(PL.c[0]-c)*.35;
+        g.add(new THREE.Mesh(tubeAlong([[c,279,126],[c,286,158],[c*.9+2,276,196],[xe,246,226],[xe,212,240],[xe,190,236]],19),mat)); });
+      g.add(new THREE.Mesh(beamGeo([0,122,228],[0,120,108],22,12),mat));                     // support vers le bloc
+      for(let i=0;i<6;i++){ g.add(new THREE.Mesh(rboxGeo(-120+i*48,-112+i*48,150,222,278,288,3),mat)); } // nervures avant
+    }});
+  const tu=PARTS.find(p=>p.id==="turbo");
+  Object.assign(tu,{layer:"exh", ghost:false, col:"#5d5852", mat:CAST, g:null, name:"Turbo K03 + collecteur d'échappement", en:"Turbocharger / exhaust manifold",
+    info:"Turbo, collecteur et capsule de wastegate forment une seule pièce de rechange. Après un défaut mécanique du turbo : contrôler filtre à air, conduits et échangeur, nettoyer ou remplacer l'échangeur si corps étrangers. Remplir d'huile par le raccord d'alimentation et laisser tourner 1 min au ralenti après montage.",
+    ex:[0,40,-300], src:SRC.turboR,
+    build:(g,mat)=>{
+      g.add(new THREE.Mesh(rboxGeo(-178,178,250,306,-136,-124,6),mat));                    // bride 4 sorties
+      ENG.CYL.forEach(c=>{ g.add(new THREE.Mesh(tubeAlong([[c,278,-130],[c,268,-160],[c+(96-c)*.45,236,-188],[92,208,-205],[100,196,-214]],19),mat)); });
+      g.add(new THREE.Mesh(voluteGeo(46,25),mat).translateX(112).translateY(175).translateZ(-226));   // volute turbine (fonte)
+      g.add(new THREE.Mesh(cylAx("x",[112,175,-226],40,46),mat));
+      g.add(new THREE.Mesh(cylAx("x",[74,175,-226],34,30),mat));                           // sortie turbine
+      g.add(new THREE.Mesh(rboxGeo(54,62,118,232,-284,-168,8),mat));                         // bride de descente
+      const al=M("#b9bdc1",ALU), core=M("#7d8287",{roughness:.5,metalness:.7});
+      g.add(new THREE.Mesh(cylAx("x",[155,175,-226],30,44),core));                         // carter central
+      g.add(new THREE.Mesh(cylAx("x",[186,175,-226],70,16),al));                           // flasque compresseur
+      g.add(new THREE.Mesh(voluteGeo(52,24),al).translateX(204).translateY(175).translateZ(-226));
+      g.add(new THREE.Mesh(cylAx("x",[208,175,-226],44,26),al));
+      g.add(new THREE.Mesh(tubeAlong([[218,175,-226],[246,178,-226],[262,205,-224],[266,262,-220],[266,312,-216]],34),al)); // entrée compresseur
+      g.add(new THREE.Mesh(tubeAlong([[204,126,-200],[205,104,-186],[200,82,-170]],24),al)); // sortie compresseur
+      g.add(new THREE.Mesh(cylAx("y",[262,312,-216],38,10),al));
+    }});
+})();
+// les vis existantes rejoignent leurs nouvelles pièces
+(function(){
+  const set=(id,o)=>Object.assign(BOLTS.find(b=>b.id===id),o);
+  set("imb",{pts:[[-150,300,135,0],[-50,300,135,0],[50,300,135,0],[150,300,135,0],[-150,258,135,0],[-50,258,135,0],[50,258,135,0],[150,258,135,0]], note:"Nombre de vis schématique."});
+  set("tmn",{pts:BOLTS.find(b=>b.id==="tmn").pts.map(p=>[p[0],p[1],-137,p[3]])});
+})();
+
+/* --- papillon, capteurs et actionneurs de l'admission --- */
+PARTS.push(
+ {id:"tb", layer:"adm", name:"Boîtier papillon J338", en:"Throttle valve module -J338-", col:"#3a3f45", mat:PLASTIC, src:SRC.intake,
+  info:"Sous le plénum, entrée vers le bas (air venant de l'échangeur). Contient G186, G187, G188. Après remplacement : adaptation au calculateur J623 par l'outil de diagnostic (fonctions assistées). Joint à remplacer.",
+  ex:[0,-140,300], build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(16,104,92,122,196,264,8),mat)); g.add(new THREE.Mesh(cylAx("y",[60,76,230],31,34),M("#a7adb3",ALU))); g.add(new THREE.Mesh(rboxGeo(100,128,94,120,210,250,4),mat)); }},
+ {id:"flapvac", layer:"adm", name:"Capsule de volets d'admission", en:"Vacuum unit for air flow control flaps", col:"#2f6db0", mat:PLASTIC, src:SRC.railx,
+  info:"Actionne les volets de tumble. Contrôle : voir manuel.", ex:[0,170,300], build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("y",[-70,230,262],20,22),mat)); g.add(new THREE.Mesh(cylAx("x",[-104,222,262],3,50),M("#9aa0a6"))); }},
+ {id:"n316", layer:"adm", name:"Électrovanne de volets N316", en:"Intake manifold flap air flow control valve -N316-", col:"#2f6db0", mat:PLASTIC, src:SRC.intake,
+  info:"Pilote la dépression vers la capsule des volets.", ex:[0,150,320], build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(-30,-6,212,236,268,288,4),mat)); }},
+ {id:"g336", layer:"sens", name:"Potentiomètre de volets G336", en:"Intake manifold flap potentiometer -G336-", col:"#b48ad6", mat:PLASTIC, src:SRC.railx,
+  info:"En bout de collecteur. Dépose : collecteur déposé.", ex:[120,80,290], build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[192,168,232],15,14),mat)); }},
+ {id:"g42", layer:"sens", name:"Transmetteur de température d'air G42", en:"Intake air temperature sender -G42-", col:"#b48ad6", mat:PLASTIC, src:SRC.intake,
+  info:"Dans le plénum.", ex:[0,140,300], build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("y",[110,222,246],8,16),mat)); }},
+ {id:"n80", layer:"adm", name:"Électrovanne de canister N80", en:"Activated charcoal filter solenoid valve 1 -N80-", col:"#2a2e33", mat:PLASTIC, src:SRC.intake,
+  info:"Forme une unité avec le clapet antiretour. Dépose : collecteur déposé.", ex:[-60,120,300], build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[-160,206,262],12,40),mat)); }},
+ {id:"rail", layer:"adm", name:"Rampe d'injection haute pression", en:"Fuel rail", col:"#9aa1a8", mat:{roughness:.35,metalness:.85}, src:SRC.railx,
+  info:"Fixée par 2 vis sur le collecteur. Conduites sans contrainte au montage.", ex:[0,30,210],
+  build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[2,240,150],11,360),mat)); ENG.CYL.forEach(c=>g.add(new THREE.Mesh(cylAx("y",[c,240,150],15,22),mat))); g.add(new THREE.Mesh(rboxGeo(-120,-100,226,246,150,168,3),mat)); g.add(new THREE.Mesh(rboxGeo(100,120,226,246,150,168,3),mat)); }},
+ {id:"inj", layer:"adm", name:"Injecteurs (×4)", en:"Injectors", col:"#2c3238", mat:{roughness:.5,metalness:.4}, src:SRC.railx,
+  info:"Injection directe, dans la culasse sous les pipes. Bague Téflon de chambre de combustion : toujours la remplacer. Joints toriques neufs. Respecter la position de montage.", ex:[0,0,160],
+  build:(g,mat)=>{ ENG.CYL.forEach(c=>{ const t=new THREE.Mesh(new THREE.CylinderGeometry(7.5,6,46,16),mat); t.rotation.x=Math.PI/2-.25; t.position.set(c,236,132); g.add(t);
+    const k=new THREE.Mesh(rboxGeo(c-9,c+9,246,262,138,150,3),M("#1d2125",PLASTIC)); g.add(k); }); }},
+ {id:"g247", layer:"sens", name:"Transmetteur de pression de carburant G247", en:"Fuel pressure sender -G247-", col:"#b48ad6", mat:PLASTIC, src:SRC.railx,
+  info:"En bout de rampe, côté distribution.", ex:[-60,30,210], build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[-190,240,150],10,24),mat)); g.add(new THREE.Mesh(cylAx("x",[-206,240,150],13,10),mat)); }},
+ {id:"hpline", layer:"adm", name:"Conduite haute pression (pompe → rampe)", en:"Fuel pipe to fuel rail", col:"#c3c8cd", mat:{roughness:.3,metalness:.9}, src:SRC.raild,
+  info:"Doit être montée sans contrainte. Écrou de raccord 18 Nm.", ex:[100,120,180],
+  build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[246,366,86],[240,340,130],[214,286,160],[192,250,156],[180,240,150]],4),mat)); }}
+);
+B({id:"tbb", part:"tb", name:"Vis du boîtier papillon", en:"Bolts for throttle valve module", m:"M6", dir:[0,-1,0], seq:false, pts:[[24,91,204,0],[96,91,204,0],[24,91,256,0],[96,91,256,0]], src:SRC.intake, torque:"5 Nm", st:["5 Nm"]});
+B({id:"g42b", part:"g42", name:"Vis du transmetteur G42", en:"Screw", m:"M5", dir:[0,1,0], seq:false, pts:[[124,222,246,0]], src:SRC.intake, torque:"5 Nm", st:["5 Nm"]});
+B({id:"railb", part:"rail", name:"Vis de fixation de la rampe", en:"Bolts (fuel rail)", m:"M6", dir:[0,0,1], seq:false, todo:true, pts:[[-110,236,169,0],[110,236,169,0]], src:SRC.raild, torque:"à compléter", st:["Couple non indiqué dans le manuel"]});
+B({id:"g247b", part:"g247", name:"Transmetteur G247", en:"Fuel pressure sender", m:"M12", dir:[-1,0,0], seq:false, pts:[[-212,240,150,0]], src:SRC.railx, torque:"27 Nm", st:["Huiler le filetage (huile moteur propre)","27 Nm"]});
+B({id:"hpu", part:"hpline", name:"Raccord de conduite HP sur la rampe", en:"Adapter / union nut", m:"M14", dir:[1,0,0], seq:false, pts:[[183,240,150,0]], src:SRC.raild, torque:"adaptateur 25 Nm · écrou 18 Nm", st:["Adaptateur sur la rampe : 25 Nm","Écrou de la conduite : 18 Nm"]});
+B({id:"hpu2", part:"hpline", name:"Raccord de conduite HP sur la pompe", en:"Union nut", m:"M14", dir:[0,0,1], seq:false, pts:[[246,366,88,0]], src:SRC.hpp, torque:"18 Nm", st:["Écrou : 18 Nm","Raccord à filetage intérieur : 40 Nm · extérieur : 25 Nm (à remplacer)"]});
+
+/* --- pompe HP horizontale sur la pompe à vide, côté admission (2 vis) --- */
+(function(){
+  const hp=PARTS.find(p=>p.id==="hpfp"); hp.g=[["c","z",246,380,52,22,62],["b",226,266,362,370,26,66,4],["c","y",246,404,52,12,20]];
+  hp.info="Montée sur la pompe à vide en bout de culasse côté boîte, côté admission, fixée par 2 vis. Poussoir à galet (peut rester dans la culasse) sur une came 4 lobes. Alimentation basse pression env. 6 bar. Dépressuriser avant dépose.";
+  hp.src=SRC.hpp;
+  Object.assign(BOLTS.find(b=>b.id==="hpb"),{pts:[[232,371,46,0],[260,371,46,0]]});
+  const vac=PARTS.find(p=>p.id==="vac"); vac.g=[["b",226,262,300,362,-40,80,8]];
+  Object.assign(BOLTS.find(b=>b.id==="vacb"),{pts:[[263,318,-24,0],[263,318,66,0],[263,350,-28,0]]});
+  const g40=PARTS.find(p=>p.id==="g40"); g40.g=[["c","x",236,350,-70,11,16]];
+  Object.assign(BOLTS.find(b=>b.id==="g40b"),{pts:[[245,368,-70,0]]});
+  const pcv=PARTS.find(p=>p.id==="pcv"); pcv.g=[["b",186,246,398,434,-92,-6,8],["c","y",216,442,-50,20,16]];
+  const pb=BOLTS.find(b=>b.id==="pcvb"); pb.pts=pb.pts.map(p=>[p[0],p[1],+(p[2]-86).toFixed(1),p[3]]);
+})();
+
+/* --- périphérie du turbo --- */
+PARTS.push(
+ {id:"wgact", layer:"exh", name:"Capsule de wastegate", en:"Vacuum unit for turbocharger", col:"#3b4046", mat:{roughness:.5,metalness:.6}, src:SRC.turbo4,
+  info:"Non réglable sur CCTA (seuls BZB, CGYA, CDAA, CDAB ont une capsule réglable). Contrôle : voir manuel.", ex:[0,60,-380],
+  build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("z",[206,252,-282],32,30),mat)); g.add(new THREE.Mesh(beamGeo([206,252,-266],[110,214,-262],4,4),M("#9aa0a6"))); }},
+ {id:"n249", layer:"exh", name:"Vanne de recirculation N249", en:"Turbocharger air recirculation valve -N249-", col:"#2a2e33", mat:PLASTIC, src:SRC.turbo1,
+  info:"Sur le carter de compresseur. Respecter la position de montage. Joint à remplacer.", ex:[60,120,-340], build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("y",[226,236,-186],20,30),mat)); g.add(new THREE.Mesh(rboxGeo(212,240,250,264,-196,-176,3),mat)); }},
+ {id:"n75", layer:"exh", name:"Électrovanne de pression de suralimentation N75", en:"Charge pressure control solenoid valve -N75-", col:"#2a2e33", mat:PLASTIC, src:SRC.turbo1,
+  info:"Pilote la capsule de wastegate. Flexibles à repérer au démontage.", ex:[80,120,-380], build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(238,268,262,292,-300,-276,4),mat)); g.add(new THREE.Mesh(cylAx("x",[230,277,-288],4,14),mat)); }},
+ {id:"cout", layer:"exh", name:"Raccord de sortie du compresseur", en:"Connection (compressor outlet)", col:"#b9bdc1", mat:ALU, src:SRC.turbo1,
+  info:"Vers l'échangeur d'air de suralimentation. Agrafe de maintien, joint à remplacer.", ex:[0,-80,-300], build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[200,84,-172],[196,60,-160],[180,46,-150]],27),mat)); }},
+ {id:"tbrkt", layer:"exh", name:"Support de turbo", en:"Bracket", col:"#55595d", mat:CAST, src:SRC.turbo3,
+  info:"Relie le turbo au bloc. Vis enduites de pâte haute température.", ex:[0,-60,-260], build:(g,mat)=>{ g.add(new THREE.Mesh(beamGeo([110,130,-236],[-30,26,-128],46,8),mat)); g.add(new THREE.Mesh(rboxGeo(-62,10,12,48,-126,-118,4),mat)); }},
+ {id:"oilfeed", layer:"exh", name:"Conduite d'alimentation d'huile du turbo", en:"Oil supply line", col:"#c9a227", mat:{roughness:.35,metalness:.85}, src:SRC.turbo2,
+  info:"Joints à remplacer. Avant démarrage : remplir le turbo d'huile par ce raccord.", ex:[0,60,-220], build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[80,170,-124],[96,236,-160],[140,238,-206],[155,207,-226]],4),mat)); }},
+ {id:"oilret", layer:"exh", name:"Conduite de retour d'huile du turbo", en:"Oil return line", col:"#8f9399", mat:{roughness:.4,metalness:.8}, src:SRC.turbo2,
+  info:"Joints à remplacer. Quattro : retour vissé au carter-cylindres.", ex:[0,-60,-220], build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[155,144,-226],[120,70,-214],[40,0,-170],[-25,-25,-124]],9),mat)); }},
+ {id:"coolfeed", layer:"exh", name:"Conduite d'alimentation de liquide (turbo)", en:"Coolant supply line", col:"#58a6a0", mat:{roughness:.35,metalness:.8}, src:SRC.turbo2,
+  info:"Joints toriques et rondelles à remplacer.", ex:[0,0,-220], build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[130,190,-124],[150,160,-170],[165,148,-212],[165,150,-226]],5),mat)); }},
+ {id:"coolret", layer:"exh", name:"Conduite de retour de liquide (turbo)", en:"Coolant return line", col:"#58a6a0", mat:{roughness:.35,metalness:.8}, src:SRC.turbo3,
+  info:"Doit être montée en même temps que le turbo.", ex:[0,80,-220], build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[168,206,-224],[160,290,-200],[80,328,-150],[20,330,-130]],5),mat)); }}
+);
+(function(){
+  const set=(id,o)=>Object.assign(BOLTS.find(b=>b.id===id),o);
+  set("tbr",{part:"tbrkt", pts:[[-45,30,-127,0],[-5,30,-127,0]], dir:[0,0,-1]});
+  set("toil",{part:"oilfeed", name:"Vis banjo d'alimentation d'huile sur le turbo (M12)", pts:[[155,212,-226,0]], dir:[0,1,0]});
+  set("tcool",{part:"coolfeed", name:"Vis banjo de liquide côté bloc (M14)"});
+  set("tret",{part:"oilret", name:"Vis du retour d'huile sur le carter"});
+})();
+B({id:"tbt", part:"tbrkt", name:"Vis support → turbo", en:"Bracket to turbocharger", m:"M8", dir:[0,-1,0], seq:false, pts:[[100,124,-246,0],[122,124,-226,0]], src:SRC.turboR, torque:"30 Nm", st:["Pâte haute température","30 Nm"]});
+B({id:"tcr", part:"coolret", name:"Vis banjo de retour de liquide (turbo)", en:"Banjo bolt", m:"M14", dir:[0,1,0], seq:false, pts:[[168,212,-222,0]], src:SRC.turbo3, torque:"38 Nm", st:["Joints neufs","38 Nm"]});
+B({id:"tcs", part:"coolfeed", name:"Vis banjo de liquide côté turbo (M14)", en:"Banjo bolt", m:"M14", dir:[0,-1,0], seq:false, pts:[[165,142,-226,0]], src:SRC.turbo2, torque:"38 Nm", st:["Joints neufs","38 Nm"]});
+B({id:"torb", part:"oilret", name:"Vis du retour d'huile sur le turbo", en:"Bolt (oil return line)", m:"M6", dir:[0,-1,0], seq:false, pts:[[145,138,-226,0],[165,138,-226,0]], src:SRC.turbo2, torque:"9 Nm", st:["Joint neuf","9 Nm"]});
+B({id:"n249b", part:"n249", name:"Vis de la vanne N249", en:"Bolt", m:"M5", dir:[0,1,0], seq:false, pts:[[214,265,-186,0],[238,265,-186,0],[226,265,-198,0]], src:SRC.turbo1, torque:"7 Nm", st:["7 Nm"], note:"Nombre de vis schématique."});
+B({id:"n75b", part:"n75", name:"Vis de l'électrovanne N75", en:"Bolt", m:"M5", dir:[0,1,0], seq:false, pts:[[253,293,-288,0]], src:SRC.turbo1, torque:"3 Nm", st:["3 Nm"]});
+B({id:"coutb", part:"cout", name:"Vis du raccord de sortie compresseur", en:"Bolt", m:"M6", dir:[0,0,1], seq:false, pts:[[186,96,-156,0],[214,96,-156,0]], src:SRC.turbo1, torque:"9 Nm", st:["9 Nm"], note:"Nombre de vis schématique."});
+B({id:"wgb", part:"wgact", name:"Vis de la capsule de wastegate", en:"Bolt", m:"M6", dir:[0,0,-1], seq:false, pts:[[186,232,-298,0],[226,272,-298,0]], src:SRC.turbo4, torque:"10 Nm", st:["10 Nm"]});
+
 /* ============================================================ Rendu 3D */
 const canvas=document.getElementById("c");
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
@@ -739,7 +891,7 @@ PARTS.forEach(p=>{
   const inner=new THREE.Group(); grp.add(inner); p.inner=inner; if(p.pos) inner.position.set(...p.pos);
   const mat = p.ghost
     ? new THREE.MeshStandardMaterial({color:p.col,transparent:true,opacity:.16,depthWrite:false,roughness:.6,metalness:0})
-    : new THREE.MeshStandardMaterial({color:p.col,roughness:.55,metalness:.35});
+    : new THREE.MeshStandardMaterial(Object.assign({color:p.col,roughness:.55,metalness:.35},p.mat||{}));
   (p.g||[]).forEach(q=>{
     const geo = q[0]==="b" ? rboxGeo(q[1],q[2],q[3],q[4],q[5],q[6],q[7]) : cylGeo(q[1],q[2],q[3],q[4],q[5],q[6]);
     const m=new THREE.Mesh(geo,mat); inner.add(m);
@@ -815,7 +967,7 @@ function applyVisibility(){
     g.visible=v;
   });
   // les vis des accessoires restent visibles même si la silhouette est masquée
-  ["alt","acomp","intake","turbo","starter","dsg","tens"].forEach(id=>{
+  ["alt","acomp","starter","dsg","tens"].forEach(id=>{
     const o=PARTS.find(p=>p.id===id).inner; o.children.forEach(ch=>{ if(ch.userData.kind!=="bolt") ch.visible = state.ghost && state.layers.acc; });
   });
   layerGroups.acc.visible = state.layers.acc;
