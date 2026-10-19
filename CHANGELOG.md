@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.3.1 – Corrections et fidélité des formes (2026-10-19)
+
+- Turbo remis dans le bon sens : compresseur côté distribution, turbine côté boîte. Conduites, vannes et capsule suivent.
+- Pompe à vide et pompe haute pression remises côté échappement en bout de culasse. La pompe HP est verticale, fixée par 2 vis. Conduite HP reroutée.
+- Reniflard redessiné d'après la figure du manuel (A15-10605) : contour, membrane, raccords, bossages et 10 vis à leur place.
+- Formes relevées sur les figures du manuel : carters de distribution inférieur et supérieur, support d'accessoires, séparateur d'huile, flasque côté boîte, cuvette du carter d'huile.
+- Carter d'arbres à cames avec bossages sur les arbres et puits de bobines. Culasse avec bossages de conduits séparés. Bloc avec nervures.
+
 ## v0.3.0 – Admission, échappement et turbo (2026-10-19)
 
 - Collecteur d'admission modélisé d'après les vues éclatées du manuel : plénum, 4 pipes, bride, nervures, support vers le bloc.

@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.1</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -845,6 +845,145 @@ B({id:"n249b", part:"n249", name:"Vis de la vanne N249", en:"Bolt", m:"M5", dir:
 B({id:"n75b", part:"n75", name:"Vis de l'électrovanne N75", en:"Bolt", m:"M5", dir:[0,1,0], seq:false, pts:[[253,293,-288,0]], src:SRC.turbo1, torque:"3 Nm", st:["3 Nm"]});
 B({id:"coutb", part:"cout", name:"Vis du raccord de sortie compresseur", en:"Bolt", m:"M6", dir:[0,0,1], seq:false, pts:[[186,96,-156,0],[214,96,-156,0]], src:SRC.turbo1, torque:"9 Nm", st:["9 Nm"], note:"Nombre de vis schématique."});
 B({id:"wgb", part:"wgact", name:"Vis de la capsule de wastegate", en:"Bolt", m:"M6", dir:[0,0,-1], seq:false, pts:[[186,232,-298,0],[226,272,-298,0]], src:SRC.turbo4, torque:"10 Nm", st:["10 Nm"]});
+
+/* ============================================================
+   v0.3.1 – Fidélité des formes : contours relevés sur les figures du manuel, turbo dans le bon sens,
+   pompe à vide / pompe HP côté échappement, reniflard redessiné.
+   ============================================================ */
+function shapeOf(pts,holes){ const s=new THREE.Shape(); pts.forEach(([u,v],i)=>i?s.lineTo(u,v):s.moveTo(u,v)); s.closePath();
+  (holes||[]).forEach(([u,v,r])=>{ const h=new THREE.Path(); h.absarc(u,v,r,0,Math.PI*2,true); s.holes.push(h); }); return s; }
+const EXO=d=>({depth:d,bevelEnabled:true,bevelThickness:2,bevelSize:2,bevelSegments:2,curveSegments:24});
+function extYZ(zy,x0,x1,holes){ const g=new THREE.ExtrudeGeometry(shapeOf(zy.map(([z,y])=>[-z,y]),(holes||[]).map(([z,y,r])=>[-z,y,r])),EXO(x1-x0-4)); g.rotateY(Math.PI/2); g.translate(x0+2,0,0); return g; }
+function extXY(xy,z0,z1,holes){ const g=new THREE.ExtrudeGeometry(shapeOf(xy,holes),EXO(z1-z0-4)); g.translate(0,0,z0+2); return g; }
+function extXZ(xz,y0,y1,holes){ const g=new THREE.ExtrudeGeometry(shapeOf(xz.map(([x,z])=>[x,-z]),(holes||[]).map(([x,z,r])=>[x,-z,r])),EXO(y1-y0-4)); g.rotateX(-Math.PI/2); g.translate(0,y0+2,0); return g; }
+const setPart=(id,o)=>Object.assign(PARTS.find(p=>p.id===id),o);
+const setBolt=(id,o)=>Object.assign(BOLTS.find(b=>b.id===id),o);
+
+/* --- Carter de distribution inférieur : contour relevé sur A15-10397 (15 vis) --- */
+(function(){
+  const map=([ix,iy])=>[-112+(ix-40)/290*224, 234-(iy-95)/285*384];
+  const out=[[118,84],[272,84],[292,108],[290,152],[326,196],[328,262],[312,304],[262,352],[216,388],[148,390],[90,346],[70,330],[62,268],[52,220],[30,182],[40,156],[82,124]].map(map);
+  setPart("tcl",{g:null, build:(g,mat)=>{ g.add(new THREE.Mesh(extYZ(out,-254,-230,[[0,0,30]]),mat));
+  }});
+})();
+/* --- Carter de distribution supérieur : A15-10430 --- */
+(function(){
+  const map=([ix,iy])=>[-96+(ix-55)/250*192, 312-(iy-155)/85*80];
+  const out=[[42,172],[58,118],[110,66],[188,36],[254,58],[304,108],[320,166],[304,204],[272,250],[220,256],[160,266],[108,252],[58,218]].map(map);
+  setPart("tcu",{g:null, build:(g,mat)=>{ g.add(new THREE.Mesh(extYZ(out,-252,-230,[[ENG.CAM_IN_Z,ENG.CAM_Y,24]]),mat)); }});
+})();
+/* --- Support d'accessoires : A13-10378 --- */
+(function(){
+  const map=([ix,iy])=>[-215+(ix-100)/230*105, 250-(iy-60)/290*220];
+  const out=[[108,48],[244,42],[248,140],[252,214],[304,258],[326,300],[304,324],[220,328],[186,350],[156,350],[146,300],[128,230],[116,140]].map(map);
+  setPart("brk",{g:null, build:(g,mat)=>{ g.add(new THREE.Mesh(extXY(out,104,138),mat));
+    g.add(new THREE.Mesh(cylAx("y",[-180,256,150],34,12),mat)); g.add(new THREE.Mesh(rboxGeo(-200,-150,150,200,136,150,6),mat)); }});
+})();
+/* --- Séparateur d'huile grossier : A17-10423 --- */
+(function(){
+  const map=([ix,iy])=>[-80+(ix-40)/280*200, 90-(iy-95)/130*130];
+  const out=[[58,82],[244,82],[304,98],[322,120],[318,218],[262,228],[216,198],[140,234],[92,232],[36,192],[36,138]].map(map);
+  setPart("sep",{g:null, build:(g,mat)=>{ g.add(new THREE.Mesh(extXY(out,104,121),mat)); g.add(new THREE.Mesh(cylAx("z",[-40,92,118],13,22),mat)); }});
+})();
+/* --- Flasque d'étanchéité côté boîte : A13-10509 --- */
+(function(){
+  const map=([ix,iy])=>[-(ix-185)*1.1, -(iy-150)*1.1];
+  const out=[[128,64],[242,60],[284,128],[294,212],[272,246],[108,250],[82,212],[92,128]].map(map);
+  setPart("flange",{g:null, build:(g,mat)=>{ g.add(new THREE.Mesh(extYZ(out,228,237,[[0,0,48]]),mat)); }});
+})();
+/* --- Carter d'huile inférieur : profil de cuvette (A17-10270) --- */
+setPart("sumpL",{g:null, build:(g,mat)=>{
+  const prof=[[-205,-150],[205,-150],[205,-158],[196,-160],[190,-238],[-120,-240],[-170,-206],[-192,-162],[-205,-158]];
+  const shell=new THREE.ExtrudeGeometry(shapeOf(prof),EXO(204)); shell.translate(0,0,-104); g.add(new THREE.Mesh(shell,mat));
+  for(let i=0;i<7;i++){ g.add(new THREE.Mesh(rboxGeo(-110+i*45,-104+i*45,-238,-200,-106,106,2),mat)); } }});
+/* --- Carter d'arbres à cames : bossages sur les arbres, puits de bobines au centre (A15-10438) --- */
+const HUMP_R=34, humpY=z=>{ const d=Math.abs(Math.abs(z)-50); return d<HUMP_R? ENG.CAM_Y+Math.sqrt(HUMP_R*HUMP_R-d*d) : 370; };
+setPart("camh",{g:null, build:(g,mat)=>{
+  g.add(new THREE.Mesh(rboxGeo(-226,226,330,372,-98,98,8),mat));
+  [ENG.CAM_IN_Z,ENG.CAM_EX_Z].forEach(z=>{ const h=new THREE.Mesh(new THREE.CylinderGeometry(HUMP_R,HUMP_R,448,40,1,false,0,Math.PI),mat); h.rotation.z=Math.PI/2; h.position.set(0,ENG.CAM_Y,z); g.add(h);
+    [-176,-88,0,88,176].forEach(x=>{ const b=new THREE.Mesh(cylAx("x",[x,ENG.CAM_Y,z],HUMP_R+3,22),mat); g.add(b); }); });
+  const well=M("#262b30",{roughness:.9,metalness:.1}); ENG.CYL.forEach(c=>{ g.add(new THREE.Mesh(cylAx("y",[c,372,0],17,2),well)); });
+}});
+(function(){
+  const cb=BOLTS.find(b=>b.id==="chb"); cb.pts=cb.pts.map(p=>[p[0],humpY(p[2])+1,p[2],p[3]]);
+  setBolt("plug",{pts:ENG.CYL.map(c=>[c,373,0,0]), note:"Douille 3122 B. Les bobines (sans couple) se retirent avant. Bougie au fond du puits."});
+  setBolt("ball",{pts:[[-132,humpY(64)+1,64,0],[44,humpY(-64)+1,-64,0]]});
+  setPart("filler",{g:[["c","y",-88,381,0,22,18]]});
+})();
+/* --- Culasse : bossages de conduits séparés (admission et échappement) --- */
+setPart("head",{g:[["b",-228,228,222,330,-112,112,8]].concat(
+  ENG.CYL.map(c=>["b",c-38,c+38,252,304,-125,-112,6]), ENG.CYL.map(c=>["b",c-36,c+36,256,302,112,123,6]))});
+/* --- Bloc : nervures entre les fûts --- */
+(function(){ const b=PARTS.find(p=>p.id==="block");
+  [-176,-88,0,88,176].forEach(x=>{ b.g.push(["b",x-5,x+5,-50,214,104,112,2],["b",x-5,x+5,-50,214,-112,-104,2]); });
+  b.g.push(["b",-228,228,-55,-40,-121,121,3]); })();
+
+/* --- Pompe à vide et pompe HP : côté boîte, côté échappement (pompe HP verticale, 2 vis) --- */
+setPart("vac",{g:[["b",226,262,300,362,-92,-8,8]]});
+setBolt("vacb",{pts:[[263,318,-80,0],[263,318,-20,0],[263,350,-86,0]]});
+setPart("hpfp",{g:[["c","y",244,391,-50,24,58],["b",218,270,362,369,-62,-38,4],["c","z",244,402,-20,8,16]],
+  info:"Montée sur la pompe à vide en bout de culasse côté boîte, côté échappement, fixée par 2 vis. Entraînée par une came 4 lobes via un poussoir à galet (qui peut rester dans la culasse). Alimentation basse pression env. 6 bar. Dépressuriser avant dépose."});
+setBolt("hpb",{pts:[[224,370,-50,0],[264,370,-50,0]]});
+setPart("g40",{g:[["c","x",236,360,62,11,16]]}); setBolt("g40b",{pts:[[245,380,62,0]]});
+setPart("hpline",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[244,402,-10],[258,384,24],[258,330,110],[222,268,158],[183,240,150]],4),mat)); }});
+setBolt("hpu2",{pts:[[244,402,-12,0]]});
+
+/* --- Reniflard : contour, membrane et raccords d'après A15-10605, 10 vis --- */
+(function(){
+  const map=([ix,iy])=>[248-(iy-15)/235*66, 8+(ix-40)/280*84];          // → [x, z]
+  const body=[[55,248],[55,176],[100,150],[116,96],[128,58],[184,10],[228,10],[236,58],[244,84],[288,84],[324,100],[324,228],[298,244],[250,244],[232,258],[150,258],[108,232]].map(map);
+  const arm=[[58,70],[100,70],[122,96],[112,108],[58,106]].map(map);
+  const Y0=400;
+  setPart("pcv",{g:null, ex:[60,420,40], build:(g,mat)=>{
+    g.add(new THREE.Mesh(extXZ(body,Y0,Y0+20),mat)); g.add(new THREE.Mesh(extXZ(arm,Y0,Y0+10),mat));
+    const [mx,mz]=map([165,185]); g.add(new THREE.Mesh(cylAx("y",[mx,Y0+25,mz],15,12),mat)); g.add(new THREE.Mesh(cylAx("y",[mx,Y0+32,mz],10,4),M("#1f2328",PLASTIC)));
+    const [px,pz]=map([258,160]); g.add(new THREE.Mesh(cylAx("y",[px,Y0+24,pz],9,10),mat)); g.add(new THREE.Mesh(cylAx("z",[px,Y0+14,pz+16],6,22),mat));
+    const [hx,hz]=map([72,236]); g.add(new THREE.Mesh(tubeAlong([[hx,Y0+10,hz],[hx-6,Y0+18,hz+18],[hx-30,Y0+14,hz+40]],6),M("#1f2328",PLASTIC)));
+    const [tx,tz]=map([200,20]); g.add(new THREE.Mesh(cylAx("x",[tx+8,Y0+12,tz],7,20),mat));
+    // bossages de vis
+    [[68,240],[205,20],[300,205],[230,245],[140,150],[140,95],[198,145],[258,98],[305,105],[75,88]].forEach(q=>{ const [bx,bz]=map(q); g.add(new THREE.Mesh(cylAx("y",[bx,Y0+11,bz],6,22),mat)); });
+  }});
+  const order=[[1,68,240],[2,205,20],[3,300,205],[4,230,245],[5,140,150],[6,140,95],[7,198,145],[8,258,98],[9,305,105],[10,75,88]];
+  setBolt("pcvb",{pts:order.map(([n,ix,iy])=>{ const [x,z]=map([ix,iy]); return [+x.toFixed(1),Y0+23,+z.toFixed(1),n]; }), dir:[0,1,0],
+    note:"Contour et position des vis relevés sur la figure du manuel (A15-10605)."});
+  setPart("pcv",{info:"Module de dégazage EA888 posé sur le dessus du carter d'arbres à cames, côté boîte : membrane de régulation, raccord vers le conduit d'admission/turbo, raccord vers le collecteur d'admission. 10 vis à 11 Nm dans l'ordre 1 … 10. Joints : pas de pièce de rechange séparée."});
+})();
+
+/* --- Turbo dans le bon sens : compresseur côté distribution, turbine côté boîte --- */
+(function(){
+  const T=112, H=66, C=18, Y=175, Z=-226;
+  setPart("turbo",{build:(g,mat)=>{
+    g.add(new THREE.Mesh(rboxGeo(-178,178,250,306,-136,-124,6),mat));
+    ENG.CYL.forEach(c=>{ g.add(new THREE.Mesh(tubeAlong([[c,278,-130],[c,268,-160],[c+(96-c)*.45,236,-188],[96,208,-205],[104,196,-214]],19),mat)); });
+    g.add(new THREE.Mesh(voluteGeo(46,25),mat).translateX(T).translateY(Y).translateZ(Z));
+    g.add(new THREE.Mesh(cylAx("x",[T,Y,Z],40,46),mat));
+    g.add(new THREE.Mesh(cylAx("x",[T+40,Y,Z],34,30),mat));                         // sortie turbine (vers la boîte)
+    g.add(new THREE.Mesh(rboxGeo(T+54,T+62,118,232,-284,-168,8),mat));               // bride de descente
+    const al=M("#b9bdc1",ALU), core=M("#7d8287",{roughness:.5,metalness:.7});
+    g.add(new THREE.Mesh(cylAx("x",[H,Y,Z],30,44),core));
+    g.add(new THREE.Mesh(cylAx("x",[C+18,Y,Z],70,16),al));
+    g.add(new THREE.Mesh(voluteGeo(52,24),al).translateX(C).translateY(Y).translateZ(Z));
+    g.add(new THREE.Mesh(cylAx("x",[C-4,Y,Z],44,26),al));
+    g.add(new THREE.Mesh(tubeAlong([[C-14,Y,Z],[C-42,Y+3,Z],[C-58,Y+30,Z+2],[C-62,Y+87,Z+6],[C-62,Y+137,Z+10]],34),al));
+    g.add(new THREE.Mesh(cylAx("y",[C-62,Y+137,Z+10],38,10),al));
+    g.add(new THREE.Mesh(tubeAlong([[C,Y-49,Z+26],[C-1,Y-71,Z+40],[C+4,Y-93,Z+56]],24),al));
+  }, info:"Turbo, collecteur et capsule de wastegate forment une seule pièce de rechange. Compresseur côté distribution, turbine côté boîte. Après un défaut mécanique du turbo : contrôler filtre à air, conduits et échangeur. Remplir d'huile par le raccord d'alimentation et laisser tourner 1 min au ralenti après montage."});
+  setPart("wgact",{build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("z",[C-2,252,-282],32,30),mat)); g.add(new THREE.Mesh(beamGeo([C-2,252,-266],[T,214,-262],4,4),M("#9aa0a6"))); }});
+  setPart("n249",{build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("y",[C-22,236,-186],20,30),mat)); g.add(new THREE.Mesh(rboxGeo(C-36,C-8,250,264,-196,-176,3),mat)); }});
+  setPart("n75",{build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(C-64,C-34,262,292,-300,-276,4),mat)); g.add(new THREE.Mesh(cylAx("x",[C-72,277,-288],4,14),mat)); }});
+  setPart("cout",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[C+4,84,-172],[C+8,60,-160],[C+24,46,-150]],27),mat)); }});
+  setPart("oilfeed",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[80,170,-124],[80,236,-160],[70,238,-206],[H,207,Z]],4),mat)); }});
+  setPart("oilret",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[H,144,Z],[50,70,-214],[10,0,-170],[-25,-25,-124]],9),mat)); }});
+  setPart("coolfeed",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[130,190,-124],[110,160,-170],[84,148,-212],[78,150,Z]],5),mat)); }});
+  setPart("coolret",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[58,206,-224],[50,290,-200],[20,328,-150],[-20,330,-130]],5),mat)); }});
+  setBolt("toil",{pts:[[H,212,Z,0]]}); setBolt("torb",{pts:[[H-10,138,Z,0],[H+10,138,Z,0]]});
+  setBolt("tcs",{pts:[[78,142,Z,0]]}); setBolt("tcr",{pts:[[58,212,-222,0]]});
+  setBolt("n249b",{pts:[[C-34,265,-186,0],[C-10,265,-186,0],[C-22,265,-198,0]]});
+  setBolt("n75b",{pts:[[C-49,293,-288,0]]});
+  setBolt("coutb",{pts:[[C-10,96,-156,0],[C+18,96,-156,0]]});
+  setBolt("wgb",{pts:[[C+18,232,-298,0],[C-22,272,-298,0]]});
+})();
+setBolt("brkb",{pts:BOLTS.find(b=>b.id==="brkb").pts.map(p=>[p[0],p[1],139,p[3]])});
 
 /* ============================================================ Rendu 3D */
 const canvas=document.getElementById("c");
