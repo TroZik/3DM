@@ -26,6 +26,13 @@ Sections utilisées :
 | Capteurs, bougies | Assembly overview – ignition system |
 | Supports moteur | Assembly overview – assembly mountings |
 
+## Documents complémentaires
+
+- Même manuel au format PDF : https://vwts.ru/engine/cawa-cawb-cbfa-ccta-cctb-bzb-cgya-cczb-ccza-cdaa-cczc-cdab-cczd-repair-manual-eng.pdf
+- SSP Audi 606 « Moteurs TFSI 1,8 l et 2,0 l de la ligne EA888 (3e génération) » : https://www.vag-technique.fr/ext_files/ssp/audi/cSSP_606_Moteurs_TFSI_de_1,8l_et_2,0l_Audi_de_la_ligne_EA888_(3%C3%A8me_g%C3%A9n%C3%A9ration).pdf
+  À utiliser avec prudence : il décrit la génération 3, alors que le CCTA est une génération 1.
+- Disposition du haut moteur (reniflard, pompe à vide, pompe HP, G40) : vue éclatée « Assembly overview – cylinder head » (figure A15-10656).
+
 ## Valeurs non disponibles (à compléter)
 
 - Vis de liaison boîte DSG 02E ↔ moteur : dans ELSA, non reprises dans le manuel moteur.

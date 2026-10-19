@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.2</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.2.1</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -221,7 +221,7 @@ const PARTS = [
   info:"Paliers d'arbres à cames intégrés. Surface d'étanchéité : nettoyer, aucune reprise permise. Pâte à joint.",
   g:[["b",-226,226,330,382,-98,98,8],["c","x",-224,365,-38,22,10],["c","x",-224,365,38,22,10]], ex:[0,320,0]},
  {id:"tcu", layer:"head", name:"Carter de distribution supérieur", en:"Timing chain cover (top)", col:"#6b737b", src:SRC.covers,
-  info:"Joint à remplacer s'il est endommagé.", g:[["b",-252,-228,232,386,-100,100,10]], ex:[-220,120,0]},
+  info:"Joint à remplacer s'il est endommagé.", g:[["b",-252,-228,232,402,-100,100,10]], ex:[-220,120,0]},
  {id:"tcl", layer:"head", name:"Carter de distribution inférieur", en:"Lower timing chain cover", col:"#626a72", src:SRC.covers,
   info:"Version 15 vis ou 8 vis selon modèle. Pâte silicone D 174 003 A2, cordon 2–3 mm, montage dans les 5 min, attendre 30 min avant de mettre l'huile. Contrôler l'écart avec le bloc : 0,2 mm max.",
   g:[["b",-254,-228,-150,234,-112,112,14]], ex:[-230,0,0]},
@@ -235,7 +235,7 @@ const PARTS = [
  {id:"sep", layer:"lube", name:"Séparateur d'huile grossier", en:"Coarse oil separator", col:"#4d555e", src:SRC.sump,
   info:"Sur la face avant du bloc, en bas. Joint à remplacer.", g:[["b",-82,122,-42,92,104,122,8]], ex:[0,-40,160]},
  {id:"pcv", layer:"lube", name:"Reniflard de carter (dégazage)", en:"Crankcase breather", col:"#3f464e", src:SRC.head,
-  info:"Raccords vers conduit d'admission/turbo et vers collecteur d'admission. Position schématique.", g:[["b",10,190,336,388,-128,-98,8],["c","z",120,362,-136,20,16]], ex:[0,200,-200]},
+  info:"EA888 : module de dégazage posé sur le dessus du carter d'arbres à cames, côté boîte (l'EA113 avait un reniflard latéral). Raccords vers le conduit d'admission/turbo et vers le collecteur d'admission. Joints : pas de pièce de rechange séparée.", g:[["b",186,246,398,434,-14,74,8],["c","y",216,442,30,20,16]], ex:[60,420,40]},
  {id:"brk", layer:"lube", name:"Support d'accessoires (filtre à huile)", en:"Bracket for ancillaries", col:"#7c858e", src:SRC.belt,
   info:"Porte l'alternateur, le compresseur de clim, le tendeur, le filtre à huile, le refroidisseur d'huile et le manocontact F1. Joints toriques du raccord : humidifier au liquide de refroidissement.",
   g:[["b",-216,-108,28,252,104,142,8]], ex:[-60,0,170]},
@@ -253,9 +253,9 @@ const PARTS = [
  {id:"guard", layer:"cool", name:"Carter de courroie de pompe à eau", en:"Toothed belt guard", col:"#3c4248", src:SRC.pump,
   info:"Courroie crantée de pompe à eau dessous. Pignon d'entraînement : collet côté boîte.", g:[["b",228,244,126,214,52,104,6]], ex:[150,0,60]},
  {id:"vac", layer:"head", name:"Pompe à vide", en:"Vacuum pump", col:"#57606a", src:SRC.head,
-  info:"Ne pas démonter. Joint à remplacer s'il est endommagé. Position schématique.", g:[["c","x",246,282,-48,30,36]], ex:[200,170,0]},
+  info:"En bout de culasse côté boîte, entraînée par l'arbre à cames d'échappement. Porte la pompe haute pression (poussoir à galet dans son carter). Ne pas démonter. Joint à remplacer s'il est endommagé.", g:[["b",226,262,300,362,-92,-8,8]], ex:[200,170,0]},
  {id:"hpfp", layer:"head", name:"Pompe haute pression carburant", en:"High-pressure pump (N276)", col:"#8a9097", src:SRC.intake,
-  info:"Poussoir à galet : peut rester dans la culasse. Dépressuriser le circuit avant dépose. Position schématique.", g:[["c","y",208,404,18,24,44]], ex:[0,430,60]},
+  info:"Montée sur la pompe à vide, côté boîte. Entraînée par une came 4 lobes de l'arbre d'échappement via un poussoir à galet (qui peut rester dans la culasse). Dépressuriser le circuit avant dépose. Conduite vers la rampe sans contrainte.", g:[["c","y",244,391,-50,24,58]], ex:[200,270,0]},
  {id:"g62", layer:"sens", name:"Sonde de température G62", en:"Coolant temperature sender -G62-", col:"#2a6", src:SRC.pump,
   info:"Version enfichée (agrafe) ou vissée (plaquette 4 Nm).", g:[["c","y",196,226,150,8,20]], ex:[0,40,200]},
  {id:"knock", layer:"sens", name:"Capteur de cliquetis G61", en:"Knock sensor 1 -G61-", col:"#c9a227", src:SRC.ign,
@@ -264,9 +264,13 @@ const PARTS = [
  {id:"g28", layer:"sens", name:"Capteur de régime G28", en:"Engine speed sender -G28-", col:"#b48ad6", src:SRC.ign,
   info:"En bas à l'avant du bloc, à côté du séparateur d'huile.", g:[["c","z",150,30,116,12,16]], ex:[0,-20,120]},
  {id:"g40", layer:"sens", name:"Capteur de Hall G40", en:"Hall sender -G40-", col:"#b48ad6", src:SRC.ign,
-  info:"Sur le carter d'arbres à cames, côté distribution. Contacts dorés.", g:[["c","z",-196,356,104,11,16]], ex:[-40,320,90]},
+  info:"En bout de culasse côté boîte, lit la position de l'arbre à cames. Contacts dorés.", g:[["c","x",236,360,62,11,16]], ex:[200,300,80]},
  {id:"n205", layer:"head", name:"Électrovanne de déphaseur N205", en:"Inlet camshaft control valve 1 -N205-", col:"#222a30", src:SRC.covers,
   info:"Sur le carter de distribution supérieur. Joint : graisser, remplacer s'il est endommagé.", g:[["c","x",-262,340,10,22,20]], ex:[-260,140,0]},
+ {id:"filler", layer:"lube", name:"Bouchon de remplissage d'huile", en:"Cap with seal", col:"#1f2429", src:SRC.head,
+  info:"Sur le dessus du carter d'arbres à cames. Bouchon avec joint.", g:[["c","y",-88,407,0,22,18]], ex:[0,430,0]},
+ {id:"hcool", layer:"cool", name:"Raccord de liquide de refroidissement (culasse)", en:"Connection", col:"#4f8f8a", src:SRC.head,
+  info:"En bout de culasse côté boîte. Joint torique à remplacer, à lubrifier au liquide de refroidissement.", g:[["b",226,244,245,295,10,50,6],["c","x",252,270,30,14,20]], ex:[200,160,40]},
  {id:"damper", layer:"side", name:"Amortisseur de vibrations (poulie)", en:"Vibration damper", col:"#50575e", src:SRC.belt,
   info:"Mettre au PMH (encoche face au repère du carter inférieur). Joint torique à remplacer. Contre-appui T10355.", g:[["c","x",-276,0,0,82,40],["c","x",-266,0,0,40,24]], ex:[-360,0,0]},
  {id:"flange", layer:"side", name:"Flasque d'étanchéité côté boîte", en:"Sealing flange on gearbox side", col:"#6a727a", src:SRC.flange,
@@ -315,31 +319,35 @@ B({id:"hb6", part:"head", name:"Vis de culasse côté distribution (M6)", en:"Bo
 // Carter d'arbres à cames : 22 vis, ordre par colonnes 1 … 6
 (function(){
   const cols=[[-176,4],[-88,2],[0,1],[88,3],[176,5]], pts=[];
-  cols.forEach(([x,n])=>[-80,-46,46,80].forEach(z=>pts.push([x,383,z,n])));
-  pts.push([-216,383,-84,6],[-216,383,84,6]);
+  cols.forEach(([x,n])=>[-80,-46,46,80].forEach(z=>pts.push([x,399,z,n])));
+  pts.push([-216,399,-84,6],[-216,399,84,6]);
   B({id:"chb", part:"camh", name:"Vis du carter d'arbres à cames", en:"Cylinder head cover bolts", m:"M6", renew:true, dir:[0,1,0], pts, src:SRC.valve,
      torque:"8 Nm + 90°", st:["Visser à la main par colonnes 1 … 6, en plusieurs passes","Serrer à 8 Nm dans l'ordre 1 … 6","Tourner de 90° dans l'ordre 1 … 6 (clé rigide)"],
      note:"Garder le cadre de maintien bien droit. Un numéro = une colonne de vis."});
 })();
-B({id:"tbk", part:"head", name:"Vis des pattes de levage", en:"Transport bracket bolts", m:"M8", dir:[0,0,-1], seq:false,
-   pts:[[-205,300,-113,0],[-215,270,-113,0],[205,300,113,0],[215,270,113,0]], src:SRC.head, torque:"25 Nm", st:["25 Nm"], note:"Deux pattes de levage. Positions schématiques."});
+B({id:"tbk", part:"head", name:"Vis de patte de levage (côté distribution)", en:"Transport bracket bolt", m:"M8", dir:[0,0,-1], seq:false,
+   pts:[[-205,290,-125,0]], src:SRC.head, torque:"25 Nm", st:["25 Nm"], note:"Position schématique."});
+B({id:"tbk2", part:"head", name:"Vis de patte de levage (côté boîte)", en:"Transport bracket bolt", m:"M8", dir:[1,0,0], seq:false,
+   pts:[[229,250,-60,0]], src:SRC.head, torque:"25 Nm", st:["25 Nm"], note:"Position schématique."});
 B({id:"hsh", part:"head", name:"Vis d'écran thermique (culasse)", en:"Heat shield bolts", m:"M8", dir:[0,0,-1], seq:false,
    pts:[[-150,240,-114,0],[0,240,-114,0],[150,240,-114,0]], src:SRC.turboR, torque:"20 Nm", st:["20 Nm (M8 et M12)"], note:"Positions schématiques."});
 B({id:"vacb", part:"vac", name:"Vis de pompe à vide", en:"Securing bolts for vacuum pump", m:"M6", dir:[1,0,0], seq:false,
-   pts:[[283,-48+275,-48,0],[283,300,-20,0],[283,250,-20,0]].map(p=>[p[0],p[1],p[2],0]), src:SRC.head, torque:"9 Nm", st:["9 Nm (CCTA)"],
+   pts:[[263,318,-80,0],[263,318,-20,0],[263,350,-86,0]], src:SRC.head, torque:"9 Nm", st:["9 Nm (CCTA)"],
    note:"CCZA/CDAA : 8 Nm + 180°. Sur CCTA : 9 Nm. Joint posé sur la pompe, 2 vis engagées, puis présenter sur la culasse."});
-B({id:"pcvb", part:"pcv", name:"Vis du reniflard de carter", en:"Crankcase breather bolts", m:"M6", dir:[0,0,-1],
-   pts:[[22,380,-129,1],[100,346,-129,2],[180,380,-129,3],[140,380,-129,4],[60,380,-129,5],[60,346,-129,6],[110,380,-129,7],[150,346,-129,8],[180,346,-129,9],[22,346,-129,10]],
-   src:SRC.head, torque:"11 Nm", st:["Serrer dans l'ordre 1 … 10 à 11 Nm"], note:"Positions schématiques (ordre conforme au manuel)."});
+B({id:"pcvb", part:"pcv", name:"Vis du reniflard de carter", en:"Crankcase breather bolts", m:"M6", dir:[0,1,0],
+   pts:[[240.8,435,-7.4,1],[190.0,435,36.4,2],[232.8,435,66.8,3],[242.0,435,44.4,4],[220.0,435,15.6,5],[207.3,435,15.6,6],[218.9,435,34.2,7],[208.0,435,53.4,8],[209.6,435,68.4,9],[205.7,435,-5.2,10]],
+   src:SRC.head, torque:"11 Nm", st:["Serrer dans l'ordre 1 … 10 à 11 Nm"], note:"Ordre conforme à la figure du manuel, positions adaptées au modèle."});
 B({id:"hpb", part:"hpfp", name:"Vis de pompe haute pression", en:"Bolts for high-pressure pump", m:"M6", renew:true, dir:[0,1,0], seq:false,
-   pts:[[208,384,52,0],[179,384,1,0],[236,384,1,0]], src:SRC.intake, torque:"8 Nm + 90°", st:["M6 : 8 Nm","Tourner de 90°"],
+   pts:[[244,363,-16,0],[218,363,-74,0],[262,363,-74,0]], src:SRC.intake, torque:"8 Nm + 90°", st:["M6 : 8 Nm","Tourner de 90°"],
    note:"Filetage M8 (autres versions) : 20 Nm. Conduite vers la rampe : 18 Nm, sans contrainte."});
-B({id:"g40b", part:"g40", name:"Vis du capteur de Hall G40", en:"Bolt", m:"M6", dir:[0,0,1], seq:false, pts:[[-178,356,100,0]], src:SRC.head, torque:"9 Nm", st:["9 Nm"]});
+B({id:"g40b", part:"g40", name:"Vis du capteur de Hall G40", en:"Bolt", m:"M6", dir:[1,0,0], seq:false, pts:[[245,380,62,0]], src:SRC.head, torque:"9 Nm", st:["9 Nm"]});
+B({id:"hcb", part:"hcool", name:"Vis de plaque de maintien du raccord", en:"Bolt (retaining plate)", m:"M6", dir:[1,0,0], seq:false, pts:[[245,250,40,0]], src:SRC.head, torque:"9 Nm", st:["9 Nm"]});
+B({id:"ball", part:"camh", name:"Rotules de fixation du cache moteur", en:"Plug with ball head", m:"M6", dir:[0,1,0], seq:false, pts:[[-132,399,64,0],[44,399,-64,0]], src:SRC.head, torque:"5 Nm", st:["5 Nm"], note:"Joint torique neuf, huilé. Positions schématiques."});
 B({id:"plug", part:"head", name:"Bougies d'allumage", en:"Spark plug", m:"M14", dir:[0,1,0], seq:false,
-   pts:[[-132,384,0,0],[-44,384,0,0],[44,384,0,0],[132,384,0,0]], src:SRC.ign, torque:"25 Nm", st:["25 Nm"], note:"Douille 3122 B. Les bobines (sans couple) se retirent avant."});
+   pts:[[-132,400,0,0],[-44,400,0,0],[44,400,0,0],[132,400,0,0]], src:SRC.ign, torque:"25 Nm", st:["25 Nm"], note:"Douille 3122 B. Les bobines (sans couple) se retirent avant."});
 // Distribution
 B({id:"tcub", part:"tcu", name:"Vis du carter de distribution supérieur", en:"Timing chain cover (top) bolts", m:"M6", dir:[-1,0,0],
-   pts:[[-253,312,92,1],[-253,312,-92,2],[-253,244,72,3],[-253,385,10,4],[-253,244,-72,5]], src:SRC.covers,
+   pts:[[-253,312,92,1],[-253,312,-92,2],[-253,244,72,3],[-253,401,10,4],[-253,244,-72,5]], src:SRC.covers,
    torque:"9 Nm", st:["Serrer à la main dans l'ordre 1 … 5","Serrer à 9 Nm"], note:"Clé V.A.G 1783 avec embout plat 10 mm."});
 (function(){
   const img=[[13,125,97],[11,178,98],[10,222,98],[12,270,98],[9,90,137],[8,268,160],[7,45,178],[6,312,203],[5,68,213],[4,312,262],[1,80,258],[2,295,303],[3,82,318],[15,148,370],[14,210,373]];
@@ -629,8 +637,8 @@ PARTS.push({id:"camTens", layer:"chain", internal:true, name:"Tendeur et rails d
 B({id:"ctb", part:"camTens", name:"Vis du tendeur de chaîne de distribution", en:"Bolt (chain tensioner)", m:"M6", dir:[-1,0,0], seq:false, pts:[[-257,180,-102,0],[-257,140,-102,0]], src:SRC.chain, torque:"9 Nm", st:["9 Nm"]});
 B({id:"cgp", part:"camTens", name:"Axes de guidage des rails", en:"Guide pins", m:"M8", dir:[-1,0,0], seq:false, pts:[[-253,100,80,0],[-253,300,80,0],[-253,300,-80,0],[-253,415,0,0]], src:SRC.chain, torque:"20 Nm", st:["20 Nm"], note:"Positions schématiques."});
 PARTS.push({id:"saddle", layer:"chain", internal:true, name:"Pont de palier (côté distribution)", en:"Bearing saddle", col:"#7b848c", src:SRC.chain,
-  info:"Maintient les arbres à cames côté distribution.", ex:[-60,420,0], build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(-232,-212,384,400,-72,72,4),mat)); }});
-B({id:"sdb", part:"saddle", name:"Vis du pont de palier", en:"Bolt (bearing saddle)", m:"M6", renew:true, dir:[0,1,0], seq:false, pts:[[-222,401,-60,0],[-222,401,0,0],[-222,401,60,0]], src:SRC.chain,
+  info:"Maintient les arbres à cames côté distribution.", ex:[-60,420,0], build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(-232,-212,400,416,-72,72,4),mat)); }});
+B({id:"sdb", part:"saddle", name:"Vis du pont de palier", en:"Bolt (bearing saddle)", m:"M6", renew:true, dir:[0,1,0], seq:false, pts:[[-222,417,-60,0],[-222,417,0,0],[-222,417,60,0]], src:SRC.chain,
    torque:"M6 : 8 Nm + 90° · M8 : 20 Nm + 90°", st:["M6 : 8 Nm puis 90°","M8 : 20 Nm puis 90°"], note:"Vis à remplacer. Nombre et positions schématiques."});
 
 /* --- Arbres d'équilibrage --- */
@@ -684,7 +692,7 @@ B({id:"jetb", part:"jets", name:"Soupapes de surpression (gicleurs)", en:"Pressu
 /* --- repositionnement de l'électrovanne N205 sur l'axe de l'arbre d'admission --- */
 (function(){ const n=PARTS.find(p=>p.id==="n205"); n.g=[["c","x",-262,ENG.CAM_Y,ENG.CAM_IN_Z,22,20]];
   const b=BOLTS.find(x=>x.id==="n205b"); b.pts=[[-273,ENG.CAM_Y+28,ENG.CAM_IN_Z+22,0],[-273,ENG.CAM_Y-28,ENG.CAM_IN_Z-22,0]];
-  const ch=PARTS.find(p=>p.id==="camh"); ch.g=[["b",-226,226,330,382,-98,98,8]]; })();
+  const ch=PARTS.find(p=>p.id==="camh"); ch.g=[["b",-226,226,330,398,-98,98,8]]; })();
 
 /* ============================================================ Rendu 3D */
 const canvas=document.getElementById("c");
@@ -788,7 +796,7 @@ function labelSprite(txt){
   x.lineWidth=8; x.strokeStyle="#1a1206"; x.stroke();
   x.fillStyle="#1a1206"; x.font="700 64px JetBrains Mono, monospace"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String(txt),64,68);
   const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding;
-  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true})); s.scale.set(30,30,1); s.renderOrder=10; return s;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true})); s.scale.set(24,24,1); s.renderOrder=10; return s;
 }
 
 /* ============================================================ État */

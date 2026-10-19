@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.2.1 – Haut moteur corrigé (2026-10-19)
+
+- Reniflard (module de dégazage) déplacé sur le dessus du carter d'arbres à cames, côté boîte, comme sur l'EA888. Il était sur le côté, comme sur l'EA113.
+- Pompe à vide en bout de culasse côté boîte, côté échappement. La pompe haute pression est montée dessus.
+- Capteur de Hall G40 déplacé côté boîte.
+- Ajouts : bouchon de remplissage d'huile, raccord de liquide de refroidissement sur la culasse, rotules du cache moteur (5 Nm), pattes de levage aux deux extrémités.
+- Carter d'arbres à cames rehaussé : les cames ne le traversent plus.
+
 ## v0.2.0 – Pièces internes (2026-10-19)
 
 - Équipage mobile : vilebrequin (avec pignons et roue cible G28), 4 pistons avec segments et axe, 4 bielles avec chapeaux et vis.
