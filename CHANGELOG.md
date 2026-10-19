@@ -1,5 +1,14 @@
 # Historique des versions
 
+## v0.3.2 – Carters TFSI, reniflard debout, visserie contrôlée (2026-10-19)
+
+- Carter d'huile inférieur en tôle emboutie : collerette, partie peu profonde, puits, raidisseurs. Les 20 vis sont replacées sur la collerette.
+- Ajout du transmetteur de niveau et de température d'huile sous le carter : 3 écrous sur goujons soudés, 9 Nm, joint neuf.
+- Carter d'huile supérieur : fonderie alu nervurée (effet bedplate).
+- Carter d'arbres à cames : dessus plat nervuré avec bossages de vis et puits de bobines. Les bosses sur les arbres, de type TDI, sont supprimées.
+- Reniflard : module debout, plus grand, en bout de culasse côté boîte, côté admission. Orientation reprise de la figure A15-10605 (vue côté boîte), 10 vis horizontales. Le capteur G40 passe dessous.
+- Visserie : assise automatique de chaque vis sur la surface de sa pièce. Un contrôle automatique vérifie qu'il n'y a ni vis dans le vide ni chevauchement (0 et 0). Six chevauchements corrigés à la main.
+
 ## v0.3.1 – Corrections et fidélité des formes (2026-10-19)
 
 - Turbo remis dans le bon sens : compresseur côté distribution, turbine côté boîte. Conduites, vannes et capsule suivent.

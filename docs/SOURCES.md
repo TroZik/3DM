@@ -33,6 +33,9 @@ Sections utilisées :
   À utiliser avec prudence : il décrit la génération 3, alors que le CCTA est une génération 1.
 - Disposition du haut moteur (reniflard, pompe à vide, pompe HP, G40) : vue éclatée « Assembly overview – cylinder head » (figure A15-10656).
 
+- SSP Audi 384 « Moteur TFSI 1,8 l 4V à chaîne » (EA888 génération 1) : https://www.audiclub.fi/audifinns/filedata/fetch?id=1980335
+  Utilisé pour le carter d'huile (tôle emboutie, transmetteur de niveau, insert alvéolé) et le dégazage.
+
 ## Valeurs non disponibles (à compléter)
 
 - Vis de liaison boîte DSG 02E ↔ moteur : dans ELSA, non reprises dans le manuel moteur.

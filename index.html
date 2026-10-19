@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.1</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.2</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -776,7 +776,7 @@ PARTS.push(
   info:"Forme une unité avec le clapet antiretour. Dépose : collecteur déposé.", ex:[-60,120,300], build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[-160,206,262],12,40),mat)); }},
  {id:"rail", layer:"adm", name:"Rampe d'injection haute pression", en:"Fuel rail", col:"#9aa1a8", mat:{roughness:.35,metalness:.85}, src:SRC.railx,
   info:"Fixée par 2 vis sur le collecteur. Conduites sans contrainte au montage.", ex:[0,30,210],
-  build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[2,240,150],11,360),mat)); ENG.CYL.forEach(c=>g.add(new THREE.Mesh(cylAx("y",[c,240,150],15,22),mat))); g.add(new THREE.Mesh(rboxGeo(-120,-100,226,246,150,168,3),mat)); g.add(new THREE.Mesh(rboxGeo(100,120,226,246,150,168,3),mat)); }},
+  build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[2,240,150],11,360),mat)); ENG.CYL.forEach(c=>g.add(new THREE.Mesh(cylAx("y",[c,240,150],15,22),mat))); g.add(new THREE.Mesh(rboxGeo(-90,-70,226,246,150,168,3),mat)); g.add(new THREE.Mesh(rboxGeo(70,90,226,246,150,168,3),mat)); }},
  {id:"inj", layer:"adm", name:"Injecteurs (×4)", en:"Injectors", col:"#2c3238", mat:{roughness:.5,metalness:.4}, src:SRC.railx,
   info:"Injection directe, dans la culasse sous les pipes. Bague Téflon de chambre de combustion : toujours la remplacer. Joints toriques neufs. Respecter la position de montage.", ex:[0,0,160],
   build:(g,mat)=>{ ENG.CYL.forEach(c=>{ const t=new THREE.Mesh(new THREE.CylinderGeometry(7.5,6,46,16),mat); t.rotation.x=Math.PI/2-.25; t.position.set(c,236,132); g.add(t);
@@ -789,7 +789,7 @@ PARTS.push(
 );
 B({id:"tbb", part:"tb", name:"Vis du boîtier papillon", en:"Bolts for throttle valve module", m:"M6", dir:[0,-1,0], seq:false, pts:[[24,91,204,0],[96,91,204,0],[24,91,256,0],[96,91,256,0]], src:SRC.intake, torque:"5 Nm", st:["5 Nm"]});
 B({id:"g42b", part:"g42", name:"Vis du transmetteur G42", en:"Screw", m:"M5", dir:[0,1,0], seq:false, pts:[[124,222,246,0]], src:SRC.intake, torque:"5 Nm", st:["5 Nm"]});
-B({id:"railb", part:"rail", name:"Vis de fixation de la rampe", en:"Bolts (fuel rail)", m:"M6", dir:[0,0,1], seq:false, todo:true, pts:[[-110,236,169,0],[110,236,169,0]], src:SRC.raild, torque:"à compléter", st:["Couple non indiqué dans le manuel"]});
+B({id:"railb", part:"rail", name:"Vis de fixation de la rampe", en:"Bolts (fuel rail)", m:"M6", dir:[0,0,1], seq:false, todo:true, pts:[[-80,236,169,0],[80,236,169,0]], src:SRC.raild, torque:"à compléter", st:["Couple non indiqué dans le manuel"]});
 B({id:"g247b", part:"g247", name:"Transmetteur G247", en:"Fuel pressure sender", m:"M12", dir:[-1,0,0], seq:false, pts:[[-212,240,150,0]], src:SRC.railx, torque:"27 Nm", st:["Huiler le filetage (huile moteur propre)","27 Nm"]});
 B({id:"hpu", part:"hpline", name:"Raccord de conduite HP sur la rampe", en:"Adapter / union nut", m:"M14", dir:[1,0,0], seq:false, pts:[[183,240,150,0]], src:SRC.raild, torque:"adaptateur 25 Nm · écrou 18 Nm", st:["Adaptateur sur la rampe : 25 Nm","Écrou de la conduite : 18 Nm"]});
 B({id:"hpu2", part:"hpline", name:"Raccord de conduite HP sur la pompe", en:"Union nut", m:"M14", dir:[0,0,1], seq:false, pts:[[246,366,88,0]], src:SRC.hpp, torque:"18 Nm", st:["Écrou : 18 Nm","Raccord à filetage intérieur : 40 Nm · extérieur : 25 Nm (à remplacer)"]});
@@ -985,6 +985,105 @@ setBolt("hpu2",{pts:[[244,402,-12,0]]});
 })();
 setBolt("brkb",{pts:BOLTS.find(b=>b.id==="brkb").pts.map(p=>[p[0],p[1],139,p[3]])});
 
+/* ============================================================
+   v0.3.2 – Carter d'huile (tôle emboutie + capteur à 3 goujons), carter d'arbres à cames TFSI,
+   reniflard debout en bout de culasse (figure A15-10605 vue de face), contrôle de la visserie.
+   ============================================================ */
+SRC.ssp384 = "https://www.audiclub.fi/audifinns/filedata/fetch?id=1980335";
+
+/* --- Carter d'arbres à cames : dessus plat, bossages de vis, puits de bobines (pas de bosses type TDI) --- */
+const CAM_TOP=396;
+setPart("camh",{g:null, info:"Carter d'arbres à cames avec paliers intégrés : dessus plat nervuré, bossages autour des vis, puits de bobines au centre. Surface d'étanchéité : nettoyer, aucune reprise permise. Pâte à joint. Vis à remplacer.",
+ build:(g,mat)=>{
+  g.add(new THREE.Mesh(rboxGeo(-226,226,330,CAM_TOP,-98,98,10),mat));
+  const cb=BOLTS.find(b=>b.id==="chb");
+  cb.pts.forEach(p=>g.add(new THREE.Mesh(cylAx("y",[p[0],CAM_TOP+1,p[2]],9,6),mat)));
+  [-60,60].forEach(z=>g.add(new THREE.Mesh(rboxGeo(-220,220,CAM_TOP-2,CAM_TOP+3,z-4,z+4,2),mat)));      // nervures longitudinales
+  const well=M("#262b30",{roughness:.9,metalness:.1});
+  ENG.CYL.forEach(c=>{ g.add(new THREE.Mesh(cylAx("y",[c,CAM_TOP+.6,0],17,2),well)); g.add(new THREE.Mesh(cylAx("y",[c,CAM_TOP+1,0],21,3),mat)); });
+}});
+(function(){
+  const cb=BOLTS.find(b=>b.id==="chb"); cb.pts=cb.pts.map(p=>[p[0],CAM_TOP+4,p[2],p[3]]);
+  setBolt("plug",{pts:ENG.CYL.map(c=>[c,CAM_TOP+1,0,0])});
+  setBolt("ball",{pts:[[-132,CAM_TOP+1,30,0],[44,CAM_TOP+1,-30,0]]});
+  setPart("filler",{g:[["c","y",-88,CAM_TOP+9,0,22,18]]});
+})();
+
+/* --- Reniflard : module debout contre le bout de culasse côté boîte, côté admission ---
+   Figure A15-10605 = vue depuis la boîte : gauche → avant (+Z), droite → arrière, haut → haut. */
+(function(){
+  const k=.4, map=([ix,iy])=>[108-(ix-40)*k, 424-(iy-10)*k];     // → [z, y]
+  const body=[[55,248],[55,176],[100,150],[116,96],[128,58],[184,10],[228,10],[236,58],[244,84],[288,84],[324,100],[324,228],[298,244],[250,244],[232,258],[150,258],[108,232]].map(map);
+  const arm=[[58,70],[100,70],[122,96],[112,108],[58,106]].map(map);
+  const X0=228, X1=252;
+  setPart("pcv",{g:null, ex:[220,120,40], info:"Module de dégazage (reniflard) EA888 : monté debout en bout de culasse côté boîte, côté admission. Membrane de régulation de pression, raccord vers le conduit d'admission/turbo (marche suralimentée) et vers le collecteur d'admission (marche atmosphérique). 10 vis à 11 Nm dans l'ordre 1 … 10. Joints : pas de pièce de rechange séparée.",
+   build:(g,mat)=>{
+    g.add(new THREE.Mesh(extYZ(body,X0,X1),mat)); g.add(new THREE.Mesh(extYZ(arm,X0,X0+12),mat));
+    const [mz,my]=map([165,185]); g.add(new THREE.Mesh(cylAx("x",[X1+6,my,mz],19,12),mat)); g.add(new THREE.Mesh(cylAx("x",[X1+13,my,mz],12,4),M("#1f2328",PLASTIC)));
+    const [pz,py]=map([258,160]); g.add(new THREE.Mesh(cylAx("x",[X1+5,py,pz],11,10),mat)); g.add(new THREE.Mesh(cylAx("z",[X1+5,py,pz-18],6,26),mat));
+    const [hz,hy]=map([80,250]); g.add(new THREE.Mesh(tubeAlong([[X0+12,hy+8,hz],[X0+14,hy-14,hz+4],[X0+10,hy-34,hz+20],[X0,hy-50,hz+40]],7),M("#1f2328",PLASTIC)));
+    const [tz,ty]=map([90,40]); g.add(new THREE.Mesh(tubeAlong([[X0+8,ty,tz],[X0+10,ty+12,tz-10],[X0+4,ty+22,tz-40]],8),M("#1f2328",PLASTIC)));
+    [[68,240],[205,20],[300,205],[230,245],[140,150],[140,95],[198,145],[258,98],[305,105],[75,88]].forEach(q=>{ const [bz,by]=map(q); g.add(new THREE.Mesh(cylAx("x",[X1+2,by,bz],7,8),mat)); });
+  }});
+  const order=[[1,68,240],[2,205,20],[3,300,205],[4,230,245],[5,140,150],[6,140,95],[7,198,145],[8,258,98],[9,305,105],[10,75,88]];
+  setBolt("pcvb",{dir:[1,0,0], pts:order.map(([n,ix,iy])=>{ const [z,y]=map([ix,iy]); return [X1+6,+y.toFixed(1),+z.toFixed(1),n]; }),
+    note:"Contour, orientation et position des vis d'après la figure du manuel (A15-10605, vue côté boîte)."});
+  // le capteur de Hall passe sous le reniflard
+  setPart("g40",{g:[["c","x",236,306,84,11,16]]}); setBolt("g40b",{pts:[[245,320,84,0]]});
+})();
+
+/* --- Carter d'huile supérieur : fonderie alu nervurée (effet bedplate) --- */
+setPart("sumpU",{g:null, info:"Carter supérieur en alliage d'aluminium (AlSi12Cu) : loge la pompe à huile et rigidifie le carter-cylindres (effet bedplate). Pâte silicone D 174 003 A2, cordon 2–3 mm, montage dans les 5 min. Côté boîte : affleurant avec le bloc.",
+ build:(g,mat)=>{
+  g.add(new THREE.Mesh(rboxGeo(-228,228,-100,-55,-118,118,8),mat));
+  g.add(new THREE.Mesh(rboxGeo(-224,224,-150,-98,-112,112,10),mat));
+  [-170,-110,-50,10,70,130,190].forEach(x=>{ [-1,1].forEach(s=>g.add(new THREE.Mesh(rboxGeo(x-4,x+4,-148,-58,s>0?110:-120,s>0?120:-110,2),mat))); });
+  g.add(new THREE.Mesh(rboxGeo(-228,-200,-150,-55,-118,118,4),mat));
+}});
+
+/* --- Carter d'huile inférieur : tôle emboutie, puits profond, collerette à goujons --- */
+setPart("sumpL",{g:null, info:"Tôle d'acier emboutie, à revêtement. Loge le transmetteur de niveau d'huile et la vis de vidange (30 Nm). Pâte silicone, laisser sécher 30 min avant le plein. Insert alvéolé en polyamide (anti-émulsion) dans le carter.",
+ build:(g,mat)=>{
+  const fl=[[-205,-106],[205,-106],[205,106],[-205,106]];
+  g.add(new THREE.Mesh(extXZ(fl,-158,-150),mat));                                         // collerette
+  g.add(new THREE.Mesh(extXZ([[-196,-98],[196,-98],[196,98],[-196,98]],-188,-156),mat));  // partie peu profonde
+  g.add(new THREE.Mesh(extXZ([[-186,-90],[140,-90],[160,-60],[160,90],[-186,90]],-240,-186),mat)); // puits
+  for(let i=0;i<6;i++) g.add(new THREE.Mesh(rboxGeo(-150+i*50,-144+i*50,-242,-200,-92,92,2),mat));  // raidisseurs emboutis
+}});
+setBolt("drainb",{pts:[[120,-241,40,0]]}); setPart("drain",{g:[["c","y",120,-243,40,11,6]]});
+
+/* --- Transmetteur de niveau / température d'huile : 3 goujons soudés au carter --- */
+PARTS.push({id:"g266", layer:"sens", name:"Transmetteur de niveau et température d'huile", en:"Oil level and oil temperature sender", col:"#2b3036", mat:PLASTIC, src:SRC.sump,
+  info:"Fixé sous le carter inférieur par 3 écrous sur goujons soudés. Joint à remplacer. Le manuel Golf l'indique absent sur CCTA/CBFA : présent sur ton A3 (relevé sur le véhicule). Source complémentaire : SSP 384 (transmetteur G12 dans la cuvette).",
+  ex:[0,-380,0], build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("y",[-60,-252,20],28,24),mat)); g.add(new THREE.Mesh(extXZ([[-96,4],[-60,-30],[-24,4],[-24,40],[-96,40]],-244,-240),M("#7d858c")));
+    [[-86,10],[-34,10],[-60,-20]].forEach(([x,z])=>g.add(new THREE.Mesh(cylAx("y",[x,-251,z],3,16),M("#c3cad1",{metalness:.9})))); }});
+B({id:"g266b", part:"g266", name:"Écrous du transmetteur de niveau (goujons soudés)", en:"Nut", m:"M6", dir:[0,-1,0], seq:false, pts:[[-86,-245,10,0],[-34,-245,10,0],[-60,-245,-20,0]], src:SRC.sump,
+  torque:"9 Nm", st:["Joint neuf","9 Nm"], note:"Les 3 goujons sont soudés au carter : ne pas forcer au desserrage."});
+
+/* --- vis des carters inférieurs sur la nouvelle collerette --- */
+(function(){
+  const pts=[], topRow=[11,7,3,2,6,10,19], botRow=[12,8,4,1,5,9], right=[17,16,18,20], left=[14,13,15];
+  topRow.forEach((n,i)=>pts.push([-185+i*61,-159,-100,n]));
+  botRow.forEach((n,i)=>pts.push([-165+i*61,-159,100,n]));
+  right.forEach((n,i)=>pts.push([199,-159,-66+i*44,n]));
+  left.forEach((n,i)=>pts.push([-199,-159,-44+i*44,n]));
+  setBolt("slb",{pts, dir:[0,-1,0]});
+})();
+setPart("hpline",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[244,404,-12],[230,412,10],[205,408,50],[195,398,105],[188,330,150],[183,240,150]],4),mat)); }});
+
+
+/* --- chevauchements de vis corrigés --- */
+(function(){
+  const sb=BOLTS.find(b=>b.id==="sub"); sb.pts=sb.pts.map(p=>[p[0],p[1],p[2]>0?78:-78,p[3]]);
+  setBolt("tret",{pts:[[-52,-25,-118,0],[-32,-25,-118,0]]});
+  setPart("oilret",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[66,144,-226],[50,70,-214],[0,0,-170],[-42,-25,-124]],9),mat)); }});
+  setPart("g62",{g:[["c","y",130,232,140,8,20]]}); setBolt("g62b",{pts:[[112,223,140,0]]});
+  setBolt("tcr",{pts:[[80,208,-246,0]]});
+  setPart("coolret",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[80,200,-246],[60,290,-210],[20,328,-150],[-20,330,-130]],5),mat)); }});
+  setBolt("tcs",{pts:[[84,150,-206,0]]});
+  setPart("coolfeed",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[130,190,-124],[110,160,-160],[90,146,-196],[84,150,-206]],5),mat)); }});
+})();
+
 /* ============================================================ Rendu 3D */
 const canvas=document.getElementById("c");
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
@@ -1079,6 +1178,19 @@ BOLTS.forEach(b=>{
     part.inner.add(g); b.meshes.push(g); boltAll.push(g);
   });
 });
+
+
+/* --- assise automatique : chaque vis glisse le long de son axe jusqu'à la surface la plus proche --- */
+function seatBolts(){
+  scene.updateMatrixWorld(true);
+  const solids=[]; PARTS.forEach(p=>{ if(p.ghost) return; p.inner.traverse(o=>{ if(o.isMesh && o.userData.kind==="part" && !o.isInstancedMesh) solids.push(o); }); });
+  const rc=new THREE.Raycaster(); rc.far=46; const pos=new THREE.Vector3(), q=new THREE.Quaternion();
+  BOLTS.forEach(b=>{ if(b.partRef.ghost) return; b.meshes.forEach(g=>{
+    g.getWorldPosition(pos); g.getWorldQuaternion(q); const d=new THREE.Vector3(0,1,0).applyQuaternion(q);
+    rc.set(pos.clone().addScaledVector(d,6), d.clone().negate()); const h=rc.intersectObjects(solids,false)[0];
+    if(!h) return; const dist=h.distance-6; if(Math.abs(dist)<.4) return;
+    g.userData.home.addScaledVector(g.userData.dir,-dist); g.position.copy(g.userData.home); }); });
+}
 
 /* --- étiquettes numérotées --- */
 function labelSprite(txt){
@@ -1361,7 +1473,7 @@ function loop(t){
   controls.update(); renderer.render(scene,camera);
 }
 window.addEventListener("resize",resize);
-updateAnim(); applyExplode(); applyVisibility(); applyMaterials(); renderSheet(); expandSheet(true);
+updateAnim(); seatBolts(); applyExplode(); applyVisibility(); applyMaterials(); renderSheet(); expandSheet(true);
 requestAnimationFrame(()=>{updSheetH(); homeView();});
 requestAnimationFrame(loop);
 </script>
