@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.3.6 – Portées de collecteurs inclinées (2026-10-23)
+
+- Les faces admission et échappement de la culasse sont inclinées de 25° vers le haut. La section de la culasse se resserre au-dessus des portées, et le carter d'arbres à cames est ajusté à cette largeur.
+- Collecteur d'admission (avec papillon, rampe, injecteurs, capteurs, capsule des volets) et turbo avec son collecteur remontés et inclinés sur leurs portées. Les vis et goujons suivent.
+- Durite de reniflard raccordée à un embout sur le dessus du collecteur d'admission.
+- Conduites d'huile et de liquide du turbo, support de turbo, conduite HP et nouveau support alu du collecteur reliés entre le bloc et les pièces remontées.
+
 ## v0.3.5 – Collecteur d'admission refait d'après les photos (2026-10-23)
 
 - Bride réelle : 5 trous en haut, 4 pattes en bas, dégagements pour les injecteurs.

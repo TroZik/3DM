@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.5</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.6</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -995,7 +995,7 @@ SRC.ssp384 = "https://www.audiclub.fi/audifinns/filedata/fetch?id=1980335";
 const CAM_TOP=410;
 setPart("camh",{g:null, info:"Carter d'arbres à cames avec paliers intégrés : dessus plat nervuré, bossages autour des vis, puits de bobines au centre. Surface d'étanchéité : nettoyer, aucune reprise permise. Pâte à joint. Vis à remplacer.",
  build:(g,mat)=>{
-  g.add(new THREE.Mesh(rboxGeo(-226,226,365,CAM_TOP,-104,104,10),mat));
+  g.add(new THREE.Mesh(rboxGeo(-226,226,365,CAM_TOP,-92,92,10),mat));
   const cb=BOLTS.find(b=>b.id==="chb");
   cb.pts.forEach(p=>g.add(new THREE.Mesh(cylAx("y",[p[0],CAM_TOP+1,p[2]],9,6),mat)));
   [-60,60].forEach(z=>g.add(new THREE.Mesh(rboxGeo(-220,220,CAM_TOP-2,CAM_TOP+3,z-4,z+4,2),mat)));      // nervures longitudinales
@@ -1130,7 +1130,7 @@ B({id:"tmn2", part:"turbo", name:"Écrous de la barrette de fixation (bas)", en:
     g.add(new THREE.Mesh(beamGeo([mx,Y0+H+16,mz],[mx+26,Y0+H+16,mz-14],5,3),mat));
     const [ax,az]=map([150,40]); for(let i=0;i<4;i++) g.add(new THREE.Mesh(rboxGeo(ax-26+i*16,ax-22+i*16,Y0+H,Y0+H+16,az-30,az+30,1),mat));   // nervures du bras
     const [px,pz]=map([258,160]); g.add(new THREE.Mesh(cylAx("y",[px,Y0+H+6,pz],13,12),mat)); g.add(new THREE.Mesh(cylAx("x",[px+20,Y0+H+6,pz],7,30),mat));
-    const [hx,hz]=map([72,250]); g.add(new THREE.Mesh(tubeAlong([[hx,Y0+12,hz],[hx,Y0+4,hz+24],[hx-10,Y0-40,hz+44],[hx-20,Y0-90,hz+60]],9),mat));
+    const [hx,hz]=map([72,250]); const N=TP(TI,[150,330,196]); g.add(new THREE.Mesh(tubeAlong([[hx,Y0+12,hz],[hx+8,Y0+6,hz+24],[(hx+N[0])/2,(Y0+N[1])/2+6,(hz+N[2])/2+12],[N[0],N[1]+12,N[2]],N],9),mat));
     const [tx,tz]=map([205,14]); g.add(new THREE.Mesh(tubeAlong([[tx,Y0+18,tz],[tx,Y0+40,tz-20],[tx+30,Y0+46,tz-70],[tx+50,Y0+30,tz-110]],10),mat));
     [[68,240],[205,20],[300,205],[230,245],[140,150],[140,95],[198,145],[258,98],[305,105],[75,88]].forEach(q=>{ const [bx,bz]=map(q); g.add(new THREE.Mesh(cylAx("y",[bx,Y0+H/2,bz],8,H),mat)); });
   }});
@@ -1261,7 +1261,7 @@ function ovalSweep(pts,a,b,mat){
     [-176,176].forEach(x=>g.add(new THREE.Mesh(rboxGeo(x-2,x+2,206,300,150,262,1),mat)));
     for(let i=0;i<5;i++) g.add(new THREE.Mesh(rboxGeo(-180,184,150+i*14,154+i*14,276,281,1),mat)); // nervures du plénum
     g.add(new THREE.Mesh(cylAx("y",[-150,222,262],7,20),mat)); g.add(new THREE.Mesh(cylAx("z",[150,190,286],7,20),mat)); // embouts de dépression
-    g.add(new THREE.Mesh(beamGeo([-60,128,215],[-60,140,108],22,12),M("#a7adb3",ALU)));     // support alu vers le bloc
+    g.add(new THREE.Mesh(cylAx("y",[150,318,196],9,24),mat)); g.add(new THREE.Mesh(cylAx("y",[150,309,196],14,8),mat));   // embout de la durite de reniflard
   }, info:"Collecteur plastique (Mann+Hummel) à volets de tumble : bride à joint orange, 4 pipes à section ovale qui s'enroulent vers le plénum, voiles et nervures de rigidité. Boîtier papillon dessous côté boîte, capsule de volets et potentiomètre G336 en bout côté boîte. Vis : 3 Nm puis 9 Nm."});
 
   setPart("tb",{build:(g,mat)=>{ const al=M("#a9aeb3",{roughness:.7,metalness:.5});
@@ -1284,6 +1284,71 @@ function ovalSweep(pts,a,b,mat){
     info:"Électrovanne de canister, accrochée sur la face avant du plénum (relevé sur photo). Forme une unité avec le clapet antiretour."});
   setPart("flapvac",{col:"#222529"}); setPart("n316",{col:"#222529"});
   setPart("g42",{build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("y",[-110,220,240],8,16),mat)); }}); setBolt("g42b",{pts:[[-96,215,240,0]]});
+})();
+
+/* ============================================================
+   v0.3.6 – Portées de collecteurs inclinées (25°) : collecteurs plus hauts, durite de reniflard raccordée
+   ============================================================ */
+const TILT=25*Math.PI/180;
+function makeT(y0,z0,y1,z1,a){ return new THREE.Matrix4().makeTranslation(0,y1,z1).multiply(new THREE.Matrix4().makeRotationX(a)).multiply(new THREE.Matrix4().makeTranslation(0,-y0,-z0)); }
+const TI=makeT(281,122,312,112,-TILT);     // admission : face tournée vers l'avant et le haut
+const TE=makeT(276,-124,306,-112,TILT);    // échappement : face tournée vers l'arrière et le haut
+const TP=(m,p)=>{ const v=V3(p[0],p[1],p[2]).applyMatrix4(m); return [+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1)].concat(p.slice(3)); };
+const TD=(m,d)=>{ const v=V3(...d).transformDirection(m); return [v.x,v.y,v.z]; };
+const TILT_IN=["intake","tb","flapvac","g336","n316","n80","g42","rail","inj","g247"], TILT_EX=["turbo","wgact","n249","n75","cout"];
+function applyTilts(){ TILT_IN.forEach(id=>PARTS.find(p=>p.id===id).inner.applyMatrix4(TI)); TILT_EX.forEach(id=>PARTS.find(p=>p.id===id).inner.applyMatrix4(TE)); }
+
+/* --- culasse : section avec faces inclinées au-dessus des portées --- */
+(function(){
+  const zTopI=112-Math.tan(TILT)*(HEAD_TOP-312), zTopE=-112+Math.tan(TILT)*(HEAD_TOP-306);
+  const sect=[[112,222],[112,312],[zTopI,HEAD_TOP],[zTopE,HEAD_TOP],[-112,306],[-112,222]];
+  const PAD_I=[["b",-180,190,255,312,92,122,4],["b",-136-14,-136+14,324,338,100,116,2],["b",134-14,134+14,324,338,100,116,2],["b",-28,44,320,344,100,117,3]];
+  ENG.CYL.forEach(c=>PAD_I.push(["c","z",c,251,107,12,30]));
+  [-137,-42,49,139].forEach(x=>PAD_I.push(["b",x-9,x+9,227,244,92,122,3]));
+  const PAD_E=[["b",-188,170,237,305,-124,-94,6],["b",-195,190,226,242,-124,-94,3],["c","z",4,327,-110,14,20],["c","z",167,335,-108,11,16]];
+  [[110,325,22,16],[-89,326,28,16],[49,332,16,16],[-136,338,14,14]].forEach(([x,y,w,hh])=>PAD_E.push(["b",x-w/2,x+w/2,y-hh/2,y+hh/2,-118,-98,3]));
+  const geo=q=> q[0]==="b" ? rboxGeo(q[1],q[2],q[3],q[4],q[5],q[6],q[7]) : cylGeo(q[1],q[2],q[3],q[4],q[5],q[6]);
+  setPart("head",{g:null, build:(grp,mat)=>{
+    grp.add(new THREE.Mesh(extYZ(sect,-228,228),mat));
+    const dark=M("#141618",{roughness:1,metalness:0});
+    const gi=new THREE.Group(), ge=new THREE.Group();
+    PAD_I.forEach(q=>gi.add(new THREE.Mesh(geo(q),mat))); PAD_E.forEach(q=>ge.add(new THREE.Mesh(geo(q),mat)));
+    ENG.CYL.forEach(c=>{
+      const o=new THREE.Mesh(new THREE.CylinderGeometry(1,1,2,32),dark); o.scale.set(31,1,13.5); o.rotation.x=Math.PI/2; o.position.set(c,281,122.2); gi.add(o);
+      [-1,1].forEach(s=>gi.add(new THREE.Mesh(cylAx("z",[c+s*31,281,122.4],4.5,1),dark)));
+      gi.add(new THREE.Mesh(cylAx("z",[c,251,122.3],7,1),dark));
+      ge.add(new THREE.Mesh(cylAx("z",[c,276,-124.3],18,1),dark)); });
+    gi.applyMatrix4(TI); ge.applyMatrix4(TE); grp.add(gi,ge);
+  }});
+})();
+(function(){ const b=BOLTS.find(x=>x.id==="hsh"); b.pts=b.pts.map(p=>TP(TE,p)); b.dir=TD(TE,b.dir); })();
+/* --- carter d'arbres à cames ajusté à la nouvelle largeur du dessus de culasse --- */
+setPart("g40",{g:[["b",-40,-4,368,392,92,104,3],["c","z",-22,380,101,10,12]]}); setBolt("g40b",{pts:[[-10,380,105,0]]});
+
+/* --- conduites qui relient le turbo (relevé) au bloc --- */
+(function(){
+  const X=p=>TP(TE,p), mid=(a,b,dy,dz)=>[(a[0]+b[0])/2,(a[1]+b[1])/2+(dy||0),(a[2]+b[2])/2+(dz||0)];
+  const of=X([66,207,-226]); setPart("oilfeed",{build:(g,mat)=>{ const a=[80,170,-124]; g.add(new THREE.Mesh(tubeAlong([a,[80,236,-150],mid([80,236,-150],of,20,-10),of],4),mat)); }});
+  const orr=X([66,144,-226]); setPart("oilret",{build:(g,mat)=>{ const b=[-42,-25,-124]; g.add(new THREE.Mesh(tubeAlong([orr,[50,80,-200],[0,0,-170],b],9),mat)); }});
+  const cf=X([84,150,-206]); setPart("coolfeed",{build:(g,mat)=>{ const a=[130,190,-124]; g.add(new THREE.Mesh(tubeAlong([a,[115,190,-160],mid([115,190,-160],cf),cf],5),mat)); }});
+  const cr=X([80,200,-246]); setPart("coolret",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([cr,[60,330,-230],[20,345,-160],[-20,345,-130]],5),mat)); }});
+  const bt=X([110,130,-236]); setPart("tbrkt",{build:(g,mat)=>{ g.add(new THREE.Mesh(beamGeo(bt,[-30,26,-128],46,8),mat)); g.add(new THREE.Mesh(rboxGeo(-62,10,12,48,-126,-118,4),mat)); }});
+  const set=(id,pts,dir)=>{ const b=BOLTS.find(x=>x.id===id); b.pts=pts; if(dir) b.dir=dir; };
+  set("toil",[X([66,212,-226,0])],TD(TE,[0,1,0])); set("torb",[X([56,138,-226,0]),X([76,138,-226,0])],TD(TE,[0,-1,0]));
+  set("tcs",[X([84,150,-206,0])],TD(TE,[0,-1,0])); set("tcr",[X([80,208,-246,0])],TD(TE,[0,1,0]));
+  set("tbt",[X([100,124,-246,0]),X([122,124,-226,0])],TD(TE,[0,-1,0]));
+})();
+
+/* --- côté admission : conduite HP, support du collecteur, durite de reniflard --- */
+(function(){
+  const rEnd=TP(TI,[183,258,168]);
+  setPart("hpline",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[282,322,45],[284,300,80],[240,rEnd[1]+4,rEnd[2]-10],[200,rEnd[1],rEnd[2]],rEnd],4),mat)); }});
+  setBolt("hpu",{pts:[rEnd.concat([0])], dir:TD(TI,[1,0,0])});
+  const top=TP(TI,[-60,138,238]);
+  PARTS.push({id:"imsup", layer:"adm", name:"Support du collecteur d'admission", en:"Intake manifold support", col:"#a7adb3", mat:ALU, src:SRC.intake,
+    info:"Bras alu entre le bloc et le dessous du plénum. Vis côté bloc 23 Nm, écrou côté collecteur 10 Nm.", ex:[0,0,200],
+    build:(g,mat)=>{ g.add(new THREE.Mesh(beamGeo([-60,140,110],top,22,12),mat)); g.add(new THREE.Mesh(rboxGeo(-72,-48,128,152,104,112,3),mat)); }});
+  setBolt("ims",{part:"imsup", pts:[[-60,140,113,0]]});
 })();
 
 /* ============================================================ Rendu 3D */
@@ -1681,7 +1746,7 @@ function loop(t){
   controls.update(); renderer.render(scene,camera);
 }
 window.addEventListener("resize",resize);
-updateAnim(); seatBolts(); applyExplode(); applyVisibility(); applyMaterials(); renderSheet(); expandSheet(true);
+updateAnim(); applyTilts(); seatBolts(); applyExplode(); applyVisibility(); applyMaterials(); renderSheet(); expandSheet(true);
 requestAnimationFrame(()=>{updSheetH(); homeView();});
 requestAnimationFrame(loop);
 </script>
