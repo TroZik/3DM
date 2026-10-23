@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.2</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.3</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -725,7 +725,7 @@ const PL={c:[20,168,232], r:50, len:230};           // plénum
     ex:[0,80,290], src:SRC.railx,
     build:(g,mat)=>{
       const pl=new THREE.Mesh(new THREE.CapsuleGeometry(PL.r,PL.len,8,24),mat); pl.rotation.z=Math.PI/2; pl.position.set(...PL.c); g.add(pl);
-      g.add(new THREE.Mesh(rboxGeo(-178,178,252,306,122,134,6),mat));                       // bride côté culasse
+      g.add(new THREE.Mesh(rboxGeo(-190,190,236,322,122,134,6),mat));                       // bride côté culasse
       ENG.CYL.forEach(c=>{ const xe=c+(PL.c[0]-c)*.35;
         g.add(new THREE.Mesh(tubeAlong([[c,279,126],[c,286,158],[c*.9+2,276,196],[xe,246,226],[xe,212,240],[xe,190,236]],19),mat)); });
       g.add(new THREE.Mesh(beamGeo([0,122,228],[0,120,108],22,12),mat));                     // support vers le bloc
@@ -1084,8 +1084,74 @@ setPart("hpline",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[244,404,-12]
   setPart("coolfeed",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[130,190,-124],[110,160,-160],[90,146,-196],[84,150,-206]],5),mat)); }});
 })();
 
+/* ============================================================
+   v0.3.3 – Recalage sur la vidéo du moteur réel (vues admission, dessus, échappement, distribution)
+   ============================================================ */
+/* --- couleurs réelles : bloc fonte, culasse/carter AAC alu brut, carters de distribution noirs --- */
+setPart("block",{col:"#4d5155", mat:{roughness:.85,metalness:.35}, info:"Carter-cylindres en fonte grise (logo Audi moulé côté échappement). Alésage 82,5 mm, course 92,8 mm, 1984 cm³. Arbres d'équilibrage logés dans le bloc (Gen 1). Ordre d'allumage 1-3-4-2, cylindre 1 côté distribution."});
+setPart("head",{col:"#b3b8bd", mat:{roughness:.55,metalness:.55}});
+setPart("camh",{col:"#bcc1c5", mat:{roughness:.5,metalness:.55}});
+setPart("tcu",{col:"#2b2e32", mat:{roughness:.7,metalness:.2}}); setPart("tcl",{col:"#2f3236", mat:{roughness:.7,metalness:.2}});
+setPart("sumpU",{col:"#a9b0b6", mat:{roughness:.6,metalness:.5}}); setPart("sumpL",{col:"#26292c", mat:{roughness:.6,metalness:.4}});
+setPart("filler",{col:"#1d2024", mat:PLASTIC, g:[["c","y",-132,CAM_TOP+9,60,32,18],["c","y",-132,CAM_TOP+20,60,26,6]],
+  info:"Bouchon de remplissage d'huile, à l'avant du carter d'arbres à cames entre les cylindres 1 et 2. Bouchon avec joint."});
+
+/* --- culasse : bride d'admission à 4 conduits ovales, bride d'échappement continue à 4 conduits ronds --- */
+(function(){
+  const h=PARTS.find(p=>p.id==="head");
+  h.g=[["b",-228,228,222,330,-112,112,8],["b",-200,200,236,322,112,124,6],["b",-196,196,242,310,-126,-112,8]];
+  [-176,-88,0,88,176].forEach(x=>{ h.g.push(["c","z",x,312,120,9,12]); });            // bossages haut (vis de collecteur)
+  ENG.CYL.forEach(c=>h.g.push(["c","z",c,246,120,9,12]));                                // bossages bas (goujons)
+  h.build=(g)=>{ const dark=M("#141618",{roughness:1,metalness:0});
+    ENG.CYL.forEach(c=>{ const o=new THREE.Mesh(new THREE.CylinderGeometry(1,1,2,32),dark); o.scale.set(28,1,11); o.rotation.x=Math.PI/2; o.position.set(c,279,125); g.add(o);
+      const e=new THREE.Mesh(cylAx("z",[c,276,-127],19,2),dark); g.add(e); }); };
+})();
+setBolt("imb",{pts:[[-176,312,127,0],[-88,312,127,0],[0,312,127,0],[88,312,127,0],[176,312,127,0]].concat(ENG.CYL.map(c=>[c,246,127,0])), stud:false,
+  name:"Vis et écrous du collecteur d'admission", note:"5 vis en haut, 4 écrous sur goujons en bas (sous chaque conduit), d'après le moteur réel."});
+BOLTS.find(b=>b.id==="imb").studIdx=[5,6,7,8];
+setBolt("tmn",{stud:true, pts:BOLTS.find(b=>b.id==="tmn").pts.map(p=>[p[0],300,-137,p[3]]), name:"Écrous collecteur/turbo → culasse (haut)"});
+B({id:"tmn2", part:"turbo", name:"Écrous de la barrette de fixation (bas)", en:"Nut / fastening strip", m:"M8", renew:true, stud:true, dir:[0,0,-1], seq:false,
+   pts:ENG.CYL.map(c=>[c,252,-137,0]), src:SRC.turbo3, torque:"30 Nm", st:["Goujons enduits de pâte haute température","Écrous neufs","30 Nm"], note:"Ne pas desserrer pour déposer le turbo (manuel)."});
+(function(){ const t=PARTS.find(p=>p.id==="turbo"); const old=t.build; t.build=(g,mat)=>{ old(g,mat); g.add(new THREE.Mesh(rboxGeo(-170,170,244,260,-140,-136,2),M("#6c6f72"))); }; })();
+
+/* --- reniflard : couché sur le dessus, membrane ronde à l'avant entre les cylindres 3 et 4,
+       bras vers l'arrière, corps qui entoure le puits de bobine 4 (vidéo + figure A15-10605 vue de dessus) --- */
+(function(){
+  const k=.8, map=([ix,iy])=>[88+(ix-165)*k, 55+(iy-185)*k];      // → [x, z]
+  const body=[[55,248],[55,176],[100,150],[116,96],[128,58],[184,10],[228,10],[236,58],[244,84],[288,84],[324,100],[324,228],[298,244],[250,244],[232,258],[150,258],[108,232]].map(map);
+  const arm=[[58,70],[100,70],[122,96],[112,108],[58,106]].map(map);
+  const Y0=CAM_TOP+1, H=26;
+  const holes=[[132,0,26]].map(([x,z,r])=>[x,z,r]);
+  setPart("pcv",{g:null, ex:[0,420,0], col:"#24272b", mat:PLASTIC,
+   info:"Module de dégazage (reniflard) EA888 couché sur le dessus du carter d'arbres à cames, côté boîte : grosse membrane de régulation à l'avant entre les cylindres 3 et 4, bras nervuré vers l'arrière, corps qui entoure le puits de bobine 4. Raccords vers le conduit d'admission/turbo et vers le collecteur d'admission. 10 vis à 11 Nm dans l'ordre 1 … 10.",
+   build:(g,mat)=>{
+    g.add(new THREE.Mesh(extXZ(body,Y0,Y0+H,holes),mat)); g.add(new THREE.Mesh(extXZ(arm,Y0,Y0+14),mat));
+    const [mx,mz]=map([165,185]); g.add(new THREE.Mesh(cylAx("y",[mx,Y0+H+6,mz],38,12),mat)); g.add(new THREE.Mesh(new THREE.SphereGeometry(38,32,12,0,Math.PI*2,0,.45).translate(mx,Y0+H+2,mz),mat));
+    g.add(new THREE.Mesh(beamGeo([mx,Y0+H+16,mz],[mx+26,Y0+H+16,mz-14],5,3),mat));
+    const [ax,az]=map([150,40]); for(let i=0;i<4;i++) g.add(new THREE.Mesh(rboxGeo(ax-26+i*16,ax-22+i*16,Y0+H,Y0+H+16,az-30,az+30,1),mat));   // nervures du bras
+    const [px,pz]=map([258,160]); g.add(new THREE.Mesh(cylAx("y",[px,Y0+H+6,pz],13,12),mat)); g.add(new THREE.Mesh(cylAx("x",[px+20,Y0+H+6,pz],7,30),mat));
+    const [hx,hz]=map([72,250]); g.add(new THREE.Mesh(tubeAlong([[hx,Y0+12,hz],[hx,Y0+4,hz+24],[hx-10,Y0-40,hz+44],[hx-20,Y0-90,hz+60]],9),mat));
+    const [tx,tz]=map([205,14]); g.add(new THREE.Mesh(tubeAlong([[tx,Y0+18,tz],[tx,Y0+40,tz-20],[tx+30,Y0+46,tz-70],[tx+50,Y0+30,tz-110]],10),mat));
+    [[68,240],[205,20],[300,205],[230,245],[140,150],[140,95],[198,145],[258,98],[305,105],[75,88]].forEach(q=>{ const [bx,bz]=map(q); g.add(new THREE.Mesh(cylAx("y",[bx,Y0+H/2,bz],8,H),mat)); });
+  }});
+  const order=[[1,68,240],[2,205,20],[3,300,205],[4,230,245],[5,140,150],[6,140,95],[7,198,145],[8,258,98],[9,305,105],[10,75,88]];
+  setBolt("pcvb",{dir:[0,1,0], pts:order.map(([n,ix,iy])=>{ const [x,z]=map([ix,iy]); return [+x.toFixed(1),Y0+H+1,+z.toFixed(1),n]; }),
+    note:"Position des vis d'après la figure du manuel (A15-10605, vue de dessus), dimensions recalées sur le moteur réel."});
+  // vis du carter AAC recouvertes par le reniflard : masquées sous le module (toujours dans la liste)
+  setPart("g40",{g:[["c","x",236,360,62,11,16]]}); setBolt("g40b",{pts:[[245,380,62,0]]});
+  setBolt("ball",{pts:[[-132,CAM_TOP+1,-34,0],[-44,CAM_TOP+1,-34,0]]});
+})();
+setPart("hpline",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[244,404,-12],[262,398,20],[264,360,100],[225,280,158],[183,240,150]],4),mat)); }});
+
+/* --- support moteur côté distribution : grosse fonderie (vidéo) --- */
+setPart("esup",{g:null, col:"#55585b", mat:CAST, build:(g,mat)=>{
+  g.add(new THREE.Mesh(extYZ([[20,300],[110,300],[120,240],[96,120],[60,96],[30,110],[14,200]],-300,-256),mat));
+  g.add(new THREE.Mesh(rboxGeo(-312,-292,250,310,40,110,6),mat)); }});
+setBolt("esb",{pts:[[-301,280,50,0],[-301,200,100,0],[-301,130,60,0]]});
+
 /* ============================================================ Rendu 3D */
 const canvas=document.getElementById("c");
+THREE.ColorManagement.legacyMode=false;   // couleurs hexadécimales interprétées en sRGB (rendu fidèle)
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.outputEncoding=THREE.sRGBEncoding;
@@ -1096,8 +1162,8 @@ const controls=new THREE.OrbitControls(camera,canvas);
 controls.enableDamping=true; controls.dampingFactor=.09; controls.rotateSpeed=.8; controls.minDistance=250; controls.maxDistance=4500;
 controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
 
-scene.add(new THREE.HemisphereLight(0xdfe8f0,0x30281f,.75));
-const key=new THREE.DirectionalLight(0xffffff,.9); key.position.set(-900,1400,1100); scene.add(key);
+scene.add(new THREE.HemisphereLight(0xdfe8f0,0x30281f,1.1));
+const key=new THREE.DirectionalLight(0xffffff,1.5); key.position.set(-900,1400,1100); scene.add(key);
 const rim=new THREE.DirectionalLight(0x9fc4ff,.45); rim.position.set(1200,500,-1300); scene.add(rim);
 const fill=new THREE.DirectionalLight(0xffe2c0,.25); fill.position.set(200,-900,600); scene.add(fill);
 
@@ -1171,6 +1237,7 @@ BOLTS.forEach(b=>{
     const hit=new THREE.Mesh(new THREE.SphereGeometry(Math.max(13,r*2.1),8,6),MAT_HIT); hit.position.y=r*.5;
     [head,wash,hit].forEach(m=>{m.userData={kind:"bolt",gid:b.id,idx:i};});
     g.add(wash,head,hit);
+    if(b.stud || (b.studIdx&&b.studIdx.includes(i))){ const st=new THREE.Mesh(new THREE.CylinderGeometry(r*.5,r*.5,r*2.6,10),I?MATI_REUSE:MAT_REUSE); st.position.y=r*1.9; st.userData={kind:"bolt",gid:b.id,idx:i}; g.add(st); }
     g.quaternion.setFromUnitVectors(up,dir.clone().normalize());
     g.position.set(pt[0],pt[1],pt[2]);
     g.userData={kind:"bolt",gid:b.id,idx:i,home:new THREE.Vector3(pt[0],pt[1],pt[2]),dir:dir.clone().normalize(),head,baseMat};

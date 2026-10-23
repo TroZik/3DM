@@ -1,5 +1,15 @@
 # Historique des versions
 
+## v0.3.3 – Recalage sur la vidéo du moteur réel (2026-10-23)
+
+- Reniflard couché sur le dessus du carter d'arbres à cames et agrandi : grosse membrane à l'avant entre les cylindres 3 et 4, bras nervuré vers l'arrière, corps qui entoure le puits de bobine 4. Durites vers l'admission et vers le turbo.
+- Bouchon de remplissage d'huile déplacé à l'avant, entre les cylindres 1 et 2, au bon diamètre.
+- Culasse : bride d'admission avec 4 conduits ovales, 5 bossages en haut et 4 goujons en bas. Bride d'échappement continue avec 4 conduits ronds.
+- Goujons et écrous : rendu des goujons filetés (collecteur d'admission bas, collecteur d'échappement). Ajout de la barrette de fixation basse du collecteur d'échappement (4 écrous, 30 Nm, à remplacer).
+- Support moteur côté distribution redessiné en grosse fonderie.
+- Couleurs réelles : bloc en fonte foncée, culasse et carter d'arbres à cames en alu brut, carters de distribution et carter d'huile inférieur noirs, carter supérieur alu. Gestion des couleurs corrigée (elles étaient délavées).
+- Contrôle automatique de la visserie : 0 vis dans le vide, 0 chevauchement.
+
 ## v0.3.2 – Carters TFSI, reniflard debout, visserie contrôlée (2026-10-19)
 
 - Carter d'huile inférieur en tôle emboutie : collerette, partie peu profonde, puits, raidisseurs. Les 20 vis sont replacées sur la collerette.
