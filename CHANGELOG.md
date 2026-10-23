@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.3.5 – Collecteur d'admission refait d'après les photos (2026-10-23)
+
+- Bride réelle : 5 trous en haut, 4 pattes en bas, dégagements pour les injecteurs.
+- 4 pipes à section ovale qui s'enroulent vers le plénum, voiles de rigidité entre les pipes, plénum arrondi et nervuré, support alu vers le bloc.
+- Boîtier papillon alu sous le plénum côté boîte, avec moteur et connecteur latéraux. 4 vis par-dessous.
+- Capsule noire des volets avec tige à rotule, potentiomètre G336 en bout côté boîte, N80 sur la face avant du plénum, sonde G42 sur le plénum.
+
 ## v0.3.4 – Culasse refaite d'après les photos (2026-10-23)
 
 - Culasse rehaussée : le plan de joint avec le carter d'arbres à cames passe à l'axe des arbres (hauteur relevée sur les photos, étalonnage sur l'entraxe de 88 mm).
