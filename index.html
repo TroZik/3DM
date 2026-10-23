@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.3</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.4</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -992,15 +992,15 @@ setBolt("brkb",{pts:BOLTS.find(b=>b.id==="brkb").pts.map(p=>[p[0],p[1],139,p[3]]
 SRC.ssp384 = "https://www.audiclub.fi/audifinns/filedata/fetch?id=1980335";
 
 /* --- Carter d'arbres à cames : dessus plat, bossages de vis, puits de bobines (pas de bosses type TDI) --- */
-const CAM_TOP=396;
+const CAM_TOP=410;
 setPart("camh",{g:null, info:"Carter d'arbres à cames avec paliers intégrés : dessus plat nervuré, bossages autour des vis, puits de bobines au centre. Surface d'étanchéité : nettoyer, aucune reprise permise. Pâte à joint. Vis à remplacer.",
  build:(g,mat)=>{
-  g.add(new THREE.Mesh(rboxGeo(-226,226,330,CAM_TOP,-98,98,10),mat));
+  g.add(new THREE.Mesh(rboxGeo(-226,226,365,CAM_TOP,-104,104,10),mat));
   const cb=BOLTS.find(b=>b.id==="chb");
   cb.pts.forEach(p=>g.add(new THREE.Mesh(cylAx("y",[p[0],CAM_TOP+1,p[2]],9,6),mat)));
   [-60,60].forEach(z=>g.add(new THREE.Mesh(rboxGeo(-220,220,CAM_TOP-2,CAM_TOP+3,z-4,z+4,2),mat)));      // nervures longitudinales
   const well=M("#262b30",{roughness:.9,metalness:.1});
-  ENG.CYL.forEach(c=>{ g.add(new THREE.Mesh(cylAx("y",[c,CAM_TOP+.6,0],17,2),well)); g.add(new THREE.Mesh(cylAx("y",[c,CAM_TOP+1,0],21,3),mat)); });
+  ENG.CYL.forEach(c=>{ g.add(new THREE.Mesh(cylAx("y",[c,CAM_TOP+.6,0],17,2),well)); g.add(new THREE.Mesh(cylAx("y",[c,CAM_TOP+8,0],21,16),mat)); });
 }});
 (function(){
   const cb=BOLTS.find(b=>b.id==="chb"); cb.pts=cb.pts.map(p=>[p[0],CAM_TOP+4,p[2],p[3]]);
@@ -1149,6 +1149,98 @@ setPart("esup",{g:null, col:"#55585b", mat:CAST, build:(g,mat)=>{
   g.add(new THREE.Mesh(rboxGeo(-312,-292,250,310,40,110,6),mat)); }});
 setBolt("esb",{pts:[[-301,280,50,0],[-301,200,100,0],[-301,130,60,0]]});
 
+/* ============================================================
+   v0.3.4 – Culasse refaite d'après les photos du moteur (étalonnage : entraxe 88 mm)
+   Plan de joint culasse / carter d'arbres à cames = axe des arbres (y 365).
+   ============================================================ */
+const HEAD_TOP=365;
+/* --- culasse --- */
+(function(){
+  const h=PARTS.find(p=>p.id==="head");
+  const g=[["b",-228,228,222,HEAD_TOP,-112,112,8]];
+  // côté admission : portée usinée, bossages d'injecteurs, pattes basses taraudées
+  g.push(["b",-180,190,255,312,112,122,4]);
+  ENG.CYL.forEach(c=>g.push(["c","z",c,251,117,12,10]));
+  [-137,-42,49,139].forEach(x=>g.push(["b",x-9,x+9,227,244,112,122,3]));
+  g.push(["b",-136-14,-136+14,324,338,112,116,2],["b",134-14,134+14,324,338,112,116,2]);   // pattes en T
+  g.push(["b",-28,44,320,344,112,117,3]);                                                   // plaque « 06H 103 373 K »
+  // côté échappement : portée continue, lèvre basse à goujons, bossages coulés
+  g.push(["b",-188,170,237,305,-124,-112,6],["b",-195,190,226,242,-124,-112,3]);
+  g.push(["c","z",4,327,-116,14,8],["c","z",167,335,-115,11,6]);                               // « AlSi10MgCu », pastille de date
+  [[110,325,22,16],[-89,326,28,16],[49,332,16,16],[-136,338,14,14]].forEach(([x,y,w,hh])=>g.push(["b",x-w/2,x+w/2,y-hh/2,y+hh/2,-118,-112,3]));
+  h.g=g;
+  h.info="Culasse alu (AlSi10MgCu), 16 soupapes. Côté admission : 4 conduits ovales à volets, 4 alésages d'injecteurs, 5 taraudages en haut et 4 pattes taraudées en bas pour le collecteur. Côté échappement : 4 conduits ronds, 5 taraudages en haut, 4 goujons sur la lèvre basse. Planéité max. 0,05 mm.";
+  h.build=(grp)=>{ const dark=M("#141618",{roughness:1,metalness:0});
+    ENG.CYL.forEach(c=>{
+      const o=new THREE.Mesh(new THREE.CylinderGeometry(1,1,2,32),dark); o.scale.set(31,1,13.5); o.rotation.x=Math.PI/2; o.position.set(c,281,122.2); grp.add(o);
+      [-1,1].forEach(s=>grp.add(new THREE.Mesh(cylAx("z",[c+s*31,281,122.4],4.5,1),dark)));     // encoches des axes de volets
+      grp.add(new THREE.Mesh(cylAx("z",[c,251,122.3],7,1),dark));                                   // alésage d'injecteur
+      grp.add(new THREE.Mesh(cylAx("z",[c,276,-124.3],18,1),dark)); });
+  };
+})();
+
+/* --- visserie des collecteurs (relevée sur les photos) --- */
+setBolt("imb",{pts:[-163,-92,-6,79,165].map(x=>[x,298,135,0]).concat([-137,-42,49,139].map(x=>[x,235,135,0])), studIdx:null, len:40,
+  name:"Vis du collecteur d'admission", note:"5 vis en haut entre les conduits, 4 vis en bas dans les pattes taraudées sous les injecteurs. Positions relevées sur le moteur. Toutes sont des vis (pas de goujons côté admission)."});
+setBolt("tmn",{pts:[[160,297,-137,3],[75,297,-137,4],[-3,297,-137,2],[-75,297,-137,5],[-160,297,-137,1]], stud:true, len:48,
+  name:"Écrous collecteur/turbo → culasse (haut, sur goujons)"});
+setBolt("tmn2",{pts:[[136,236,-137,0],[53,236,-137,0],[-41,236,-137,0],[-136,236,-137,0]], len:48});
+setBolt("hsh",{pts:[[110,325,-119,0],[-89,326,-119,0],[49,332,-119,0]], note:"Vissées dans les bossages usinés au-dessus de la portée d'échappement."});
+setBolt("hb",{pts:BOLTS.find(b=>b.id==="hb").pts.map(p=>[p[0],345,p[2],p[3],p[4]]), internal:true, noseat:true, len:175});
+(function(){ const t=PARTS.find(p=>p.id==="turbo"), old=t.build; t.build=(g,mat)=>{ old(g,mat);
+  g.add(new THREE.Mesh(rboxGeo(-186,178,228,250,-136,-124,4),mat)); }; })();
+
+/* --- admission : injecteurs et rampe à la hauteur des alésages réels --- */
+setPart("inj",{build:(g,mat)=>{ ENG.CYL.forEach(c=>{ const t=new THREE.Mesh(new THREE.CylinderGeometry(7.5,6,46,16),mat); t.rotation.x=Math.PI/2-.12; t.position.set(c,253,140); g.add(t);
+  g.add(new THREE.Mesh(rboxGeo(c-9,c+9,262,276,150,162,3),M("#1d2125",PLASTIC))); }); }});
+setPart("rail",{build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[2,258,168],11,360),mat)); ENG.CYL.forEach(c=>g.add(new THREE.Mesh(cylAx("y",[c,258,166],14,22),mat)));
+  g.add(new THREE.Mesh(rboxGeo(-90,-70,246,268,168,184,3),mat)); g.add(new THREE.Mesh(rboxGeo(70,90,246,268,168,184,3),mat)); }});
+setBolt("railb",{pts:[[-80,257,185,0],[80,257,185,0]]});
+setPart("g247",{build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("x",[-190,258,168],10,24),mat)); g.add(new THREE.Mesh(cylAx("x",[-206,258,168],13,10),mat)); }});
+setBolt("g247b",{pts:[[-212,258,168,0]]}); setBolt("hpu",{pts:[[183,258,168,0]]});
+(function(){ const im=PARTS.find(p=>p.id==="intake");
+  im.build=((orig)=>(g,mat)=>{ orig(g,mat); const f=g.children[1]; if(f){ g.remove(f); }
+    g.add(new THREE.Mesh(rboxGeo(-190,190,262,322,122,134,6),mat));
+    [-137,-42,49,139].forEach(x=>g.add(new THREE.Mesh(rboxGeo(x-11,x+11,226,264,122,134,4),mat))); })(im.build);
+})();
+
+/* --- bout de culasse côté boîte (photo) : pompe à vide côté échappement, pompe HP au-dessus côté admission --- */
+setPart("vac",{g:[["b",228,262,328,405,-104,-8,8],["c","x",270,362,-52,46,16]],
+  info:"Carter alu en bout de culasse côté boîte, côté échappement ; la pompe à vide (disque Ø ≈ 92 mm) est entraînée par l'arbre à cames d'échappement. Ne pas démonter. Joint à remplacer s'il est endommagé."});
+setBolt("vacb",{pts:[[279,402,-52,0],[279,330,-82,0],[279,330,-22,0]]});
+setPart("hpfp",{g:[["b",228,262,338,398,0,84,6],["b",262,268,346,398,12,78,3],["c","x",290,374,45,24,44],["c","x",314,374,45,20,6],["c","z",294,388,80,5,24],["c","y",282,332,45,7,22]],
+  info:"Pompe haute pression en inox, au-dessus du bout de culasse côté boîte, côté admission (relevé sur le moteur). Raccord d'alimentation basse pression à embout cannelé, sortie haute pression vers le bas. Poussoir à galet sur came 4 lobes. Dépressuriser avant dépose."});
+setBolt("hpb",{pts:[[269,392,20,0],[269,392,70,0]], dir:[1,0,0]});
+setPart("hpline",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([[282,322,45],[284,296,90],[246,268,150],[200,258,168],[183,258,168]],4),mat)); }});
+setBolt("hpu2",{pts:[[282,321,45,0]], dir:[0,-1,0]});
+/* --- capteur de Hall G40 : flanc admission du carter d'arbres à cames, côté distribution (photo) --- */
+setPart("g40",{g:[["b",-40,-4,368,392,104,116,3],["c","z",-22,380,113,10,12]], info:"Sur le flanc admission du carter d'arbres à cames, côté distribution, fixé par une vis Torx. Contacts dorés."});
+setBolt("g40b",{pts:[[-10,380,117,0]], dir:[0,0,1]});
+/* --- bouchon de remplissage : grand col cylindrique entre les cylindres 1 et 2, côté admission --- */
+setPart("filler",{g:[["c","y",-90,CAM_TOP+20,52,34,40],["c","y",-90,CAM_TOP+44,52,39,10]]});
+
+/* --- bloc côté admission (photos) : tube d'arbre d'équilibrage, pompe à eau, séparateur côté boîte --- */
+(function(){ const b=PARTS.find(p=>p.id==="block"); b.g.push(["c","x",0,100,108,22,280]); })();
+setPart("wpump",{g:[["b",-30,222,170,222,104,160,10],["c","z",150,196,168,26,24]]});
+setBolt("wpb",{pts:[[-2,220,161,3],[44,199,161,1],[94,215,161,5],[-11,196,161,4],[63,173,161,2]]});
+setBolt("thb",{pts:[[150,206,161,0],[184,184,161,0]]});
+setPart("g62",{g:[["c","y",120,232,140,8,20]]}); setBolt("g62b",{pts:[[102,223,140,0]]});
+setBolt("knb",{pts:[[8,150,120,0]]}); setPart("knock",{g:[["c","z",8,150,112,14,14]]});
+(function(){
+  const map=([ix,iy])=>[10+(ix-40)/280*170, 92-(iy-95)/130*100];
+  const out=[[58,82],[244,82],[304,98],[322,120],[318,218],[262,228],[216,198],[140,234],[92,232],[36,192],[36,138]].map(map);
+  setPart("sep",{g:null, build:(g,mat)=>{ g.add(new THREE.Mesh(extXY(out,104,122),mat)); g.add(new THREE.Mesh(cylAx("z",[60,62,120],12,20),mat)); },
+    info:"Couvercle noir du séparateur d'huile grossier, en bas du bloc côté admission, moitié côté boîte (relevé sur le moteur). Joint à remplacer."});
+  const order=[[4,75,95],[2,165,95],[1,235,95],[9,305,113],[6,42,180],[5,122,225],[3,207,207],[7,250,213],[8,312,212]];
+  setBolt("sepb",{pts:order.map(([n,ix,iy])=>{ const [x,y]=map([ix,iy]); return [+x.toFixed(1),+y.toFixed(1),123,n]; })});
+})();
+setPart("g28",{g:[["c","z",-30,40,116,12,16]]}); setBolt("g28b",{pts:[[-30,58,125,0]]});
+setBolt("ims",{pts:[[-60,140,106,0]]});
+(function(){ const im=PARTS.find(p=>p.id==="intake"), old=im.build; im.build=(g,mat)=>{ old(g,mat);
+  g.children.slice().forEach(m=>{ const p=m.geometry&&m.geometry.parameters; if(p&&p.depth===undefined&&m.geometry.type==="BoxGeometry") g.remove(m); });
+  g.add(new THREE.Mesh(beamGeo([-60,140,228],[-60,140,108],22,12),mat)); }; })();
+setBolt("g266b",{stud:true});
+
 /* ============================================================ Rendu 3D */
 const canvas=document.getElementById("c");
 THREE.ColorManagement.legacyMode=false;   // couleurs hexadécimales interprétées en sRGB (rendu fidèle)
@@ -1223,6 +1315,9 @@ const MAT_HL=new THREE.MeshStandardMaterial({color:"#f0a43a",emissive:"#f0a43a",
 const MAT_DONE=new THREE.MeshStandardMaterial({color:"#5fb98a",emissive:"#2f7a52",emissiveIntensity:.5,roughness:.4,metalness:.3});
 const MATI_REUSE=MAT_REUSE.clone(), MATI_RENEW=MAT_RENEW.clone(), MATI_TODO=MAT_TODO.clone();
 const MAT_CHECK=new THREE.MeshStandardMaterial({color:"#c9a227",roughness:.4,metalness:.5}), MATI_CHECK=MAT_CHECK.clone();
+const MAT_SHANK=new THREE.MeshStandardMaterial({color:"#8d949b",roughness:.4,metalness:.85});
+const LEN={"M5":14,"M6":22,"M8":30,"M10":40,"M12":50,"M14":20,"M18x1,5":70,"M22":30,"M10/M12":60,"—":0};
+const shankLen=b=>b.len!=null?b.len:(LEN[b.m]!=null?LEN[b.m]:25);
 const boltAll=[];
 const up=new THREE.Vector3(0,1,0);
 BOLTS.forEach(b=>{
@@ -1237,6 +1332,7 @@ BOLTS.forEach(b=>{
     const hit=new THREE.Mesh(new THREE.SphereGeometry(Math.max(13,r*2.1),8,6),MAT_HIT); hit.position.y=r*.5;
     [head,wash,hit].forEach(m=>{m.userData={kind:"bolt",gid:b.id,idx:i};});
     g.add(wash,head,hit);
+    const SL=shankLen(b); if(SL>0){ const sh=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.55,SL,10),MAT_SHANK); sh.position.y=-SL/2; sh.userData={kind:"bolt",gid:b.id,idx:i}; g.add(sh); }
     if(b.stud || (b.studIdx&&b.studIdx.includes(i))){ const st=new THREE.Mesh(new THREE.CylinderGeometry(r*.5,r*.5,r*2.6,10),I?MATI_REUSE:MAT_REUSE); st.position.y=r*1.9; st.userData={kind:"bolt",gid:b.id,idx:i}; g.add(st); }
     g.quaternion.setFromUnitVectors(up,dir.clone().normalize());
     g.position.set(pt[0],pt[1],pt[2]);
@@ -1252,7 +1348,7 @@ function seatBolts(){
   scene.updateMatrixWorld(true);
   const solids=[]; PARTS.forEach(p=>{ if(p.ghost) return; p.inner.traverse(o=>{ if(o.isMesh && o.userData.kind==="part" && !o.isInstancedMesh) solids.push(o); }); });
   const rc=new THREE.Raycaster(); rc.far=46; const pos=new THREE.Vector3(), q=new THREE.Quaternion();
-  BOLTS.forEach(b=>{ if(b.partRef.ghost) return; b.meshes.forEach(g=>{
+  BOLTS.forEach(b=>{ if(b.partRef.ghost||b.noseat) return; b.meshes.forEach(g=>{
     g.getWorldPosition(pos); g.getWorldQuaternion(q); const d=new THREE.Vector3(0,1,0).applyQuaternion(q);
     rc.set(pos.clone().addScaledVector(d,6), d.clone().negate()); const h=rc.intersectObjects(solids,false)[0];
     if(!h) return; const dist=h.distance-6; if(Math.abs(dist)<.4) return;
@@ -1458,7 +1554,7 @@ function renderSheet(){
       <h2>${esc(b.name)}</h2><div class="en">${esc(b.en)} · sur ${esc(p.name.toLowerCase())}</div>
       <div class="chips">${chipsFor(b)}</div>
       <div class="torque">${esc(b.torque)}</div>
-      <dl class="kv" style="margin-top:10px"><dt>Référence</dt><dd class="mono">à compléter</dd><dt>Filetage</dt><dd class="mono">${esc(b.m)}</dd><dt>Quantité</dt><dd class="mono">${b.pts.length}</dd>${hasSeq?`<dt>Position</dt><dd class="mono">n° ${pt[3]} dans l'ordre</dd>`:''}</dl>
+      <dl class="kv" style="margin-top:10px"><dt>Référence</dt><dd class="mono">à compléter</dd><dt>Filetage</dt><dd class="mono">${esc(b.m)}</dd><dt>Type</dt><dd>${b.stud?"Goujon + écrou":"Vis"}</dd>${shankLen(b)?`<dt>Longueur filetée</dt><dd class="mono">≈ ${shankLen(b)} mm</dd>`:""}<dt>Quantité</dt><dd class="mono">${b.pts.length}</dd>${hasSeq?`<dt>Position</dt><dd class="mono">n° ${pt[3]} dans l'ordre</dd>`:''}</dl>
       <div class="sec">Procédure</div><ol class="stages">${b.st.map(t=>`<li>${esc(t)}</li>`).join("")}</ol>
       ${b.note?`<p class="note">${esc(b.note)}</p>`:''}${b.loosen?`<p class="note">${esc(b.loosen)}</p>`:''}
       <div class="actions">${hasSeq?'<button class="btn pri" id="aSeq">▶ Ordre de serrage</button>':''}${b.loosen?'<button class="btn" id="aLoos">Ordre de desserrage</button>':''}<button class="btn" id="aPart">Voir la pièce</button></div>

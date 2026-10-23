@@ -1,5 +1,16 @@
 # Historique des versions
 
+## v0.3.4 – Culasse refaite d'après les photos (2026-10-23)
+
+- Culasse rehaussée : le plan de joint avec le carter d'arbres à cames passe à l'axe des arbres (hauteur relevée sur les photos, étalonnage sur l'entraxe de 88 mm).
+- Côté admission : portée usinée, 4 conduits ovales avec les encoches des axes de volets, 4 alésages d'injecteurs, 5 taraudages en haut, 4 pattes taraudées en bas, pattes en T, plaque de référence.
+- Côté échappement : portée continue, lèvre basse, 4 conduits ronds, bossages coulés (AlSi10MgCu, pastille de date), bossages usinés de l'écran thermique.
+- Visserie des collecteurs aux positions mesurées. Admission : 5 vis en haut et 4 en bas, sans goujons. Échappement : 5 goujons et écrous en haut (ordre 1 à 5), 4 goujons et écrous sur la barrette en bas.
+- Chaque vis a sa tige filetée, à une longueur indicative selon le filetage. Chaque écrou est monté sur un goujon. La fiche indique le type (vis ou goujon + écrou) et la longueur.
+- Bout de culasse côté boîte : pompe à vide côté échappement, pompe HP inox au-dessus côté admission (photo).
+- Capteur G40 sur le flanc admission du carter d'arbres à cames. Grand col de remplissage d'huile entre les cylindres 1 et 2. Puits de bobines plus hauts.
+- Bloc côté admission : tube d'arbre d'équilibrage, pompe à eau recentrée sur ses brides, capteur de cliquetis, séparateur d'huile déplacé côté boîte, capteur G28 à sa gauche.
+
 ## v0.3.3 – Recalage sur la vidéo du moteur réel (2026-10-23)
 
 - Reniflard couché sur le dessus du carter d'arbres à cames et agrandi : grosse membrane à l'avant entre les cylindres 3 et 4, bras nervuré vers l'arrière, corps qui entoure le puits de bobine 4. Durites vers l'admission et vers le turbo.
