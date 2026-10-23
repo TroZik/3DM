@@ -123,7 +123,7 @@ a.src{color:var(--accent);font-size:13px;word-break:break-word;}
   <canvas id="c" aria-label="Vue 3D du bloc moteur"></canvas>
 
   <header class="top">
-    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.6</span></div>
+    <div class="brand"><b>EA888 · CCTA</b><span>Audi A3 8PA 2012 · DQ250 Quattro · v0.3.7</span></div>
     <div class="sp"></div>
     <button class="ib" id="btnReset" title="Recentrer la vue" aria-label="Recentrer la vue"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   </header>
@@ -1349,6 +1349,95 @@ setPart("g40",{g:[["b",-40,-4,368,392,92,104,3],["c","z",-22,380,101,10,12]]}); 
     info:"Bras alu entre le bloc et le dessous du plénum. Vis côté bloc 23 Nm, écrou côté collecteur 10 Nm.", ex:[0,0,200],
     build:(g,mat)=>{ g.add(new THREE.Mesh(beamGeo([-60,140,110],top,22,12),mat)); g.add(new THREE.Mesh(rboxGeo(-72,-48,128,152,104,112,3),mat)); }});
   setBolt("ims",{part:"imsup", pts:[[-60,140,113,0]]});
+})();
+
+/* ============================================================
+   v0.3.7 – Turbo K03S côté distribution (sortie compresseur vers le bas), brides basses du collecteur,
+   bords de bloc / culasse derrière les carters de distribution, bout de culasse arrondi sur les pignons d'AAC
+   ============================================================ */
+function circZY(zc,yc,r,n){ const o=[]; for(let i=0;i<(n||36);i++){ const a=i/(n||36)*Math.PI*2; o.push([zc+Math.cos(a)*r, yc+Math.sin(a)*r]); } return o; }
+function frameYZ(out,x0,x1,k){
+  const cz=out.reduce((s,p)=>s+p[0],0)/out.length, cy=out.reduce((s,p)=>s+p[1],0)/out.length;
+  const s=new THREE.Shape(); out.forEach(([z,y],i)=>i?s.lineTo(-z,y):s.moveTo(-z,y)); s.closePath();
+  if(k){ const h=new THREE.Path(); out.map(([z,y])=>[cz+(z-cz)*k, cy+(y-cy)*k]).forEach(([z,y],i)=>i?h.lineTo(-z,y):h.moveTo(-z,y)); h.closePath(); s.holes.push(h); }
+  const g=new THREE.ExtrudeGeometry(s,{depth:x1-x0,bevelEnabled:false,curveSegments:24}); g.rotateY(Math.PI/2); g.translate(x0,0,0); return g;
+}
+const hullZY=pts=>hull2(pts);
+/* --- bout de culasse et carter d'arbres à cames arrondis sur les deux pignons d'AAC --- */
+const CAM_ENV=hullZY(circZY(ENG.CAM_IN_Z,ENG.CAM_Y,56).concat(circZY(ENG.CAM_EX_Z,ENG.CAM_Y,56),[[112,222],[-112,222],[112,300],[-112,300]]));
+(function(){ const h=PARTS.find(p=>p.id==="head"), old=h.build;
+  h.build=(g,mat)=>{ old(g,mat); g.add(new THREE.Mesh(frameYZ(CAM_ENV,-234,-226,.84),mat)); };
+  const ch=PARTS.find(p=>p.id==="camh"), oc=ch.build;
+  ch.build=(g,mat)=>{ oc(g,mat); const top=hullZY(circZY(ENG.CAM_IN_Z,ENG.CAM_Y,56).concat(circZY(ENG.CAM_EX_Z,ENG.CAM_Y,56))).filter(p=>p[1]>=ENG.CAM_Y-1);
+    const half=[[-106,ENG.CAM_Y]].concat(top.sort((a,b)=>a[0]-b[0]),[[106,ENG.CAM_Y]]);
+    g.add(new THREE.Mesh(extYZ(half,-226,-196),mat)); };
+})();
+/* --- bord du bloc derrière le carter de distribution inférieur --- */
+(function(){
+  const map=([ix,iy])=>[-112+(ix-40)/290*224, 234-(iy-95)/285*384];
+  const out=[[118,84],[272,84],[292,108],[290,152],[326,196],[328,262],[312,304],[262,352],[216,388],[148,390],[90,346],[70,330],[62,268],[52,220],[30,182],[40,156],[82,124]].map(map);
+  const b=PARTS.find(p=>p.id==="block"); const ob=b.build;
+  b.build=(g,mat)=>{ if(ob) ob(g,mat); g.add(new THREE.Mesh(frameYZ(out,-234,-226,.86),mat)); };
+  setPart("tcl",{g:null, build:(g,mat)=>{ g.add(new THREE.Mesh(extYZ(out,-254,-232,[[0,0,30]]),mat));
+    for(let i=0;i<4;i++) g.add(new THREE.Mesh(rboxGeo(-258,-254,-110+i*70,-104+i*70,-60,60,2),mat)); }});
+})();
+/* --- carter de distribution supérieur : dôme qui épouse les deux pignons --- */
+(function(){
+  const out=hullZY(circZY(ENG.CAM_IN_Z,ENG.CAM_Y,62).concat(circZY(ENG.CAM_EX_Z,ENG.CAM_Y,62),[[98,236],[-98,236]]));
+  setPart("tcu",{g:null, build:(g,mat)=>{
+    const s=new THREE.Shape(); out.forEach(([z,y],i)=>i?s.lineTo(-z,y):s.moveTo(-z,y)); s.closePath();
+    const h=new THREE.Path(); h.absarc(-ENG.CAM_IN_Z,ENG.CAM_Y,24,0,Math.PI*2,true); s.holes.push(h);
+    const geo=new THREE.ExtrudeGeometry(s,{depth:12,bevelEnabled:true,bevelThickness:8,bevelSize:6,bevelSegments:4,curveSegments:32}); geo.rotateY(Math.PI/2); geo.translate(-250,0,0);
+    g.add(new THREE.Mesh(geo,mat));
+    for(let i=0;i<5;i++) g.add(new THREE.Mesh(rboxGeo(-262,-258,388+i*8,391+i*8,-70,-10,1),mat));   // nervures
+  }, info:"Carter de distribution supérieur noir en forme de dôme qui épouse les deux pignons d'arbres à cames ; la culasse et le carter d'arbres à cames suivent le même arrondi derrière. Joint à remplacer s'il est endommagé."});
+})();
+
+/* --- turbo K03S : compresseur côté distribution, sortie vers le bas --- */
+(function(){
+  const T=-50, H=-96, C=-142, Y=175, Z=-226, al=()=>M("#b9bdc1",ALU), core=()=>M("#7d8287",{roughness:.5,metalness:.7});
+  setPart("turbo",{build:(g,mat)=>{
+    g.add(new THREE.Mesh(rboxGeo(-185,178,240,310,-136,-124,6),mat));
+    ENG.CYL.forEach(c=>{ g.add(new THREE.Mesh(tubeAlong([[c,278,-130],[c,268,-160],[c+(T+12-c)*.45,236,-188],[T+14,208,-205],[T+8,196,-214]],19),mat)); });
+    g.add(new THREE.Mesh(voluteGeo(46,25),mat).translateX(T).translateY(Y).translateZ(Z));
+    g.add(new THREE.Mesh(cylAx("x",[T,Y,Z],40,46),mat)); g.add(new THREE.Mesh(cylAx("x",[T+40,Y,Z],34,30),mat));
+    g.add(new THREE.Mesh(rboxGeo(T+54,T+62,118,232,-284,-168,8),mat));
+    g.add(new THREE.Mesh(cylAx("x",[H,Y,Z],30,44),core()));
+    g.add(new THREE.Mesh(cylAx("x",[C+18,Y,Z],70,16),al()));
+    g.add(new THREE.Mesh(voluteGeo(52,24),al()).translateX(C).translateY(Y).translateZ(Z));
+    g.add(new THREE.Mesh(cylAx("x",[C-4,Y,Z],44,26),al()));
+    g.add(new THREE.Mesh(tubeAlong([[C-14,Y,Z],[C-40,Y+3,Z],[C-56,Y+30,Z+2],[C-60,Y+87,Z+6],[C-60,Y+137,Z+10]],34),al()));
+    g.add(new THREE.Mesh(cylAx("y",[C-60,Y+137,Z+10],38,10),al()));
+    g.add(new THREE.Mesh(tubeAlong([[C,Y-46,Z-16],[C,Y-80,Z-18],[C,Y-112,Z-14]],24),al()));        // sortie compresseur vers le bas
+  }, info:"Turbo K03S avec collecteur intégré : compresseur côté distribution, sortie de compresseur dirigée vers le bas (vers l'échangeur), turbine côté boîte. Collecteur tenu en haut par 5 goujons/écrous et en bas par 2 brides en étau. Turbo, collecteur et capsule forment une seule pièce de rechange."});
+  setPart("wgact",{build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("z",[C+12,252,-282],32,30),mat)); g.add(new THREE.Mesh(beamGeo([C+12,252,-266],[T,214,-262],4,4),M("#9aa0a6"))); }});
+  setPart("n249",{build:(g,mat)=>{ g.add(new THREE.Mesh(cylAx("y",[C-22,236,-186],20,30),mat)); g.add(new THREE.Mesh(rboxGeo(C-36,C-8,250,264,-196,-176,3),mat)); }});
+  setPart("n75",{build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(C-64,C-34,262,292,-312,-288,4),mat)); g.add(new THREE.Mesh(cylAx("x",[C-72,277,-300],4,14),mat)); }});
+  setPart("cout",{build:(g,mat)=>{ g.add(new THREE.Mesh(rboxGeo(C-24,C+24,Y-120,Y-112,Z-40,Z+12,4),mat)); g.add(new THREE.Mesh(tubeAlong([[C,Y-116,Z-14],[C,Y-150,Z-10],[C+6,Y-176,Z]],27),mat)); },
+    info:"Raccord de sortie du compresseur, dirigé vers le bas vers l'échangeur d'air de suralimentation. Joint à remplacer."});
+  PARTS.push({id:"exclamp", layer:"exh", name:"Brides de fixation basses du collecteur (×2)", en:"Clamping pieces / fastening strip", col:"#6c6f72", mat:CAST, src:SRC.turbo3,
+    info:"Deux blocs à face chanfreinée qui pincent la bride basse du collecteur contre la culasse, 2 vis chacun (relevé sur le moteur).", ex:[0,-40,-300],
+    build:(g,mat)=>{ const prof=[[-124,214],[-124,238],[-136,238],[-136,254],[-144,247],[-144,214]];
+      [[-128,-52],[52,128]].forEach(([a,b])=>g.add(new THREE.Mesh(extYZ(prof,a,b),mat))); }});
+  TILT_EX.push("exclamp");
+  setBolt("tmn2",{part:"exclamp", name:"Vis des brides basses du collecteur", stud:false, pts:[[-112,226,-145,0],[-68,226,-145,0],[68,226,-145,0],[112,226,-145,0]], len:40, check:true,
+    torque:"30 Nm", st:["Pâte haute température sur le filetage","30 Nm"], note:"2 vis par bride. Couple repris de la fixation basse du manuel (barrette 30 Nm) : à confirmer pour ce montage."});
+  const X=p=>TP(TE,p), mid=(a,b,dy,dz)=>[(a[0]+b[0])/2,(a[1]+b[1])/2+(dy||0),(a[2]+b[2])/2+(dz||0)];
+  const of=X([H,207,Z]); setPart("oilfeed",{build:(g,mat)=>{ const a=[-20,170,-124]; g.add(new THREE.Mesh(tubeAlong([a,[-30,236,-150],mid([-30,236,-150],of,20,-10),of],4),mat)); }});
+  const orr=X([H,144,Z]); setPart("oilret",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([orr,[-80,80,-200],[-60,0,-170],[-42,-25,-124]],9),mat)); }});
+  const cf=X([H+18,150,-206]); setPart("coolfeed",{build:(g,mat)=>{ const a=[10,190,-124]; g.add(new THREE.Mesh(tubeAlong([a,[0,190,-160],mid([0,190,-160],cf),cf],5),mat)); }});
+  const cr=X([H+14,200,-246]); setPart("coolret",{build:(g,mat)=>{ g.add(new THREE.Mesh(tubeAlong([cr,[-90,330,-230],[-60,345,-160],[-20,345,-130]],5),mat)); }});
+  const bt=X([T+8,130,-236]); setPart("tbrkt",{build:(g,mat)=>{ g.add(new THREE.Mesh(beamGeo(bt,[-60,26,-128],46,8),mat)); g.add(new THREE.Mesh(rboxGeo(-92,-20,12,48,-126,-118,4),mat)); }});
+  const set=(id,pts,dir)=>{ const b=BOLTS.find(x=>x.id===id); b.pts=pts; if(dir) b.dir=dir; };
+  set("tbr",[[-75,30,-127,0],[-35,30,-127,0]]);
+  set("tcool",[[10,190,-122,0]]);
+  set("toil",[X([H,212,Z,0])],TD(TE,[0,1,0])); set("torb",[X([H-10,138,Z,0]),X([H+10,138,Z,0])],TD(TE,[0,-1,0]));
+  set("tcs",[X([H+18,150,-206,0])],TD(TE,[0,-1,0])); set("tcr",[X([H+14,208,-246,0])],TD(TE,[0,1,0]));
+  set("tbt",[X([T-2,124,-246,0]),X([T+20,124,-226,0])],TD(TE,[0,-1,0]));
+  set("n249b",[[C-34,265,-186,0],[C-10,265,-186,0],[C-22,265,-198,0]]);
+  set("n75b",[[C-49,293,-300,0]]);
+  set("coutb",[[C-14,Y-111,Z+2,0],[C+14,Y-111,Z+2,0]],[0,1,0]);
+  set("wgb",[[C+30,234,-298,0],[C-6,270,-298,0]]);
 })();
 
 /* ============================================================ Rendu 3D */

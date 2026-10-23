@@ -1,5 +1,14 @@
 # Historique des versions
 
+## v0.3.7 – Turbo K03S, brides basses, bout de culasse côté distribution (2026-10-23)
+
+- Turbo K03S décalé vers la distribution : compresseur près du carter de distribution, turbine au centre, sortie du compresseur dirigée vers le bas avec son raccord. Les pipes du collecteur convergent vers la turbine.
+- Fixation basse du collecteur d'échappement : 2 brides en étau à face chanfreinée, 2 vis chacune. Elles remplacent les 4 goujons.
+- Bord de bloc (cadre d'appui) derrière le carter de distribution inférieur. Carter inférieur nervuré.
+- Bout de culasse et carter d'arbres à cames arrondis autour des deux pignons d'arbres à cames.
+- Carter de distribution supérieur redessiné en dôme qui épouse les deux pignons, avec un passage pour l'électrovanne N205.
+- Conduites d'huile et de liquide, support de turbo, N249, N75 et capsule de wastegate recalés sur la nouvelle position du turbo.
+
 ## v0.3.6 – Portées de collecteurs inclinées (2026-10-23)
 
 - Les faces admission et échappement de la culasse sont inclinées de 25° vers le haut. La section de la culasse se resserre au-dessus des portées, et le carter d'arbres à cames est ajusté à cette largeur.
